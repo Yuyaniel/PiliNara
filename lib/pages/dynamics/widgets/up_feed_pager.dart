@@ -448,6 +448,17 @@ class _UpDynamicsFeedState extends State<_UpDynamicsFeed>
     });
   }
 
+  /// 展开折叠的动态（与 tab 页 onUnfold 语义一致：让后续条目可见）
+  void _unfoldAt(int index) {
+    final ids = _list[index].modules.moduleFold?.ids;
+    if (ids == null || ids.isEmpty) return;
+    final end = index + ids.length + 1;
+    for (var i = index + 1; i < end && i < _list.length; i++) {
+      _list[i].visible = true;
+    }
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -477,6 +488,7 @@ class _UpDynamicsFeedState extends State<_UpDynamicsFeed>
                 final item = _list[index];
                 return DynamicPanel(
                   item: item,
+                  onUnfold: () => _unfoldAt(index),
                   onRemove: (_) => setState(() => _list.removeAt(index)),
                   onBlock: () => setState(() => _list.removeAt(index)),
                   onUpdate: (newItem) {

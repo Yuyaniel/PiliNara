@@ -75,7 +75,11 @@ List<SettingsModel> get videoSettings => [
   NormalModel.split(
     title: '高画质请求状态',
     leading: const Icon(Icons.info_outline),
-    getSubtitle: () => HighQualityPlayback.lastStatus ?? '尚未发起请求',
+    getSubtitle: () {
+      final status = HighQualityPlayback.lastStatus ?? '尚未发起请求';
+      final left = HighQualityPlayback.cooldownSecondsLeft;
+      return left > 0 ? '$status（冷却剩余 ${left}s）' : status;
+    },
   ),
   const NormalModel.split(
     title: '高画质所用账号',

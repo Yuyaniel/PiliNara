@@ -1171,7 +1171,11 @@ class VideoDetailController extends GetxController
     if (result case Success(:final response)) {
       data = response;
       // 补画质不阻塞首帧：后台补齐后直接 merge 进 data.dash
-      if (data.dash != null) unawaited(_supplementVideoQualities());
+      if (data.dash != null) {
+        unawaited(_supplementVideoQualities().catchError((Object e, StackTrace s) {
+          Utils.reportError(e, s);
+        }));
+      }
 
       languages.value = data.language?.items;
       currLang.value = data.curLanguage;

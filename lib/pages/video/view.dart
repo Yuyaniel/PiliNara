@@ -668,6 +668,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
         '${videoDetailController.bvid}_${videoDetailController.cid.value}';
     if (_autoLikeKey == key) return;
     _autoLikeKey = key;
+    // TripleMixin.actionLikeVideo 声明为 void，内部自行处理错误
     intro.actionLikeVideo();
   }
 

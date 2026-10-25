@@ -65,6 +65,34 @@ abstract final class HighQualityPlayback {
   /// 失败后 30 秒内不再尝试，起播优先保证速度
   static void _enterCooldown() {
     _cooldownUntil = DateTime.now().add(const Duration(seconds: 30));
+    lastStatus = '${lastStatus ?? '失败'}（冷却 30 秒，期间不再尝试）';
+  }
+
+  /// 剩余冷却秒数，0 表示未在冷却
+  static int get cooldownSecondsLeft {
+    final until = _cooldownUntil;
+    if (until == null) return 0;
+    final left = until.difference(DateTime.now()).inSeconds;
+    return left > 0 ? left : 0;
+  }
+
+  /// 调试记录只保留有限长度，避免长驻内存
+  static const int _maxDebugChars = 8000;
+
+  static String _clipDebug(String value) => value.length <= _maxDebugChars
+      ? value
+      : '${value.substring(0, _maxDebugChars)}\n…（已截断，原文 ${value.length} 字符）';
+
+  /// 按设置的上限画质裁剪返回流，保证「不高于该画质」
+  static void _trimToQualityCap(PlayUrlModel model, int cap) {
+    if (cap <= 0) return;
+    model.dash?.video?.removeWhere((item) => item.id > cap);
+    model.supportFormats?.removeWhere((item) => (item.quality ?? 0) > cap);
+    model.acceptQuality?.removeWhere((code) => code > cap);
+    final codes = model.acceptQuality;
+    if (codes != null && codes.isNotEmpty) {
+      model.quality = codes.reduce((a, b) => a > b ? a : b);
+    }
   }
 
   static Dio? _dio;
@@ -156,14 +184,14 @@ abstract final class HighQualityPlayback {
         'url': url,
       };
 
-      lastRequest = _prettyMasked(payload);
+      lastRequest = _clipDebug(_prettyMasked(payload));
 
       final res = await _client.post<dynamic>(_endpoint(server), data: payload);
 
       final raw = res.data is String
           ? res.data as String
           : jsonEncode(res.data);
-      lastResponse = raw;
+      lastResponse = _clipDebug(raw);
 
       final body = jsonDecode(raw);
       if (body is! Map) {
@@ -187,6 +215,14 @@ abstract final class HighQualityPlayback {
       if (playUrl.dash?.video?.isNotEmpty != true) {
         lastStatus = '失败：响应里没有可用视频流（服务端可能判定无需处理）';
         _enterCooldown();
+        return null;
+      }
+
+      // 「目标画质」是上限：裁掉高于上限的流
+      _trimToQualityCap(playUrl, Pref.highQualityPlaybackQuality);
+      if (playUrl.dash?.video?.isNotEmpty != true) {
+        lastStatus =
+            '失败：上限画质 ${_qualityDesc(Pref.highQualityPlaybackQuality)} 低于可用档位';
         return null;
       }
 

@@ -412,6 +412,9 @@ class HeaderControl extends StatefulWidget {
 
 class HeaderControlState extends State<HeaderControl>
     with HeaderMixin, TimeBatteryMixin {
+  /// 已补过关注状态查询的视频 bvid
+  String? _followQueriedFor;
+
   @override
   late final PlPlayerController plPlayerController = widget.controller;
   late final VideoDetailController videoDetailCtr = widget.videoDetailCtr;
@@ -2153,7 +2156,7 @@ class HeaderControlState extends State<HeaderControl>
           ),
           if (!isFileSource)
             Padding(
-              padding: const EdgeInsets.only(left: 12, top: 4, bottom: 2),
+              padding: const EdgeInsets.only(left: 12, top: 14, bottom: 2),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Obx(() {
@@ -2162,8 +2165,15 @@ class HeaderControlState extends State<HeaderControl>
                   final ugc = introController is UgcIntroController
                       ? introController as UgcIntroController
                       : null;
-                  final attr = ugc?.followStatus.value.attribute ?? 0;
-                  final followed = attr != 0 && attr != 128;
+                  // 关注状态可能尚未查询，按视频维度补一次
+                  if (ugc != null &&
+                      ugc.followStatus.value.attribute == null &&
+                      _followQueriedFor != ugc.bvid) {
+                    _followQueriedFor = ugc.bvid;
+                    Future.microtask(ugc.queryFollowStatus);
+                  }
+                  final attr = ugc?.followStatus.value.attribute;
+                  final followed = attr != null && attr != 0 && attr != 128;
                   return Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -2217,9 +2227,7 @@ class HeaderControlState extends State<HeaderControl>
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: followed
-                                ? Colors.white24
-                                : const Color(0xFFFE6699),
+                            color: Colors.black.withValues(alpha: 0.38),
                             borderRadius: const BorderRadius.all(
                               Radius.circular(10),
                             ),

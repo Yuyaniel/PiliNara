@@ -412,9 +412,6 @@ class HeaderControl extends StatefulWidget {
 
 class HeaderControlState extends State<HeaderControl>
     with HeaderMixin, TimeBatteryMixin {
-  /// 已补过关注状态查询的视频 bvid
-  String? _followQueriedFor;
-
   @override
   late final PlPlayerController plPlayerController = widget.controller;
   late final VideoDetailController videoDetailCtr = widget.videoDetailCtr;
@@ -2154,98 +2151,6 @@ class HeaderControlState extends State<HeaderControl>
             ),
             title: title,
           ),
-          if (!isFileSource)
-            Padding(
-              padding: const EdgeInsets.only(left: 12, top: 14, bottom: 2),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Obx(() {
-                  final owner = introController.videoDetail.value.owner;
-                  if (owner == null) return const SizedBox.shrink();
-                  final ugc = introController is UgcIntroController
-                      ? introController as UgcIntroController
-                      : null;
-                  // 关注状态可能尚未查询，按视频维度补一次
-                  if (ugc != null &&
-                      ugc.followStatus.value.attribute == null &&
-                      _followQueriedFor != ugc.bvid) {
-                    _followQueriedFor = ugc.bvid;
-                    Future.microtask(ugc.queryFollowStatus);
-                  }
-                  final attr = ugc?.followStatus.value.attribute;
-                  final followed = attr != null && attr != 0 && attr != 128;
-                  return Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ClipOval(
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: owner.face?.isNotEmpty == true
-                              ? Image.network(
-                                  owner.face!,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, _, _) => const Icon(
-                                    Icons.person,
-                                    size: 12,
-                                    color: Colors.white70,
-                                  ),
-                                )
-                              : const Icon(
-                                  Icons.person,
-                                  size: 12,
-                                  color: Colors.white70,
-                                ),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 120),
-                        child: Text(
-                          owner.name ?? '',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            shadows: [
-                              Shadow(blurRadius: 2, color: Colors.black54),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: () {
-                          if (ugc != null && !followed) {
-                            ugc.actionRelationMod(context);
-                          }
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.38),
-                            borderRadius: const BorderRadius.all(
-                              Radius.circular(10),
-                            ),
-                          ),
-                          child: Text(
-                            followed ? '已关注' : '+ 关注',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                }),
-              ),
-            ),
           if (showFSActionItem)
             Row(
               mainAxisAlignment: .end,

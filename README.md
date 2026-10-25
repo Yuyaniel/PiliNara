@@ -33,6 +33,62 @@
 
 在此致敬原作者和上游作者的无私奉献。如有侵权请联系删除。
 
+## 本次新增（2026-10）
+
+### 高画质播放（实验性）
+
+非大会员账号经**第三方服务**获取 1080P 以上画质，支持普通投稿视频。
+
+- **原理**：App 把网页版 `playurl` 的原始参数集（含 WBI 签名 `wts`/`w_rid`）与登录凭证打包成 JSON，`POST` 到所配置服务地址的 `/api/bzview2`；服务端用高权限账号代请求 B 站，再把标准 `playurl v2` 结果返回给 App 解析播放。
+- **设置项**（设置 → 音视频设置）：
+  - `高画质播放（实验性）`：总开关
+  - `高画质服务地址`：第三方服务地址，留空表示不启用
+  - `高画质目标画质`：上限语义，只取不高于该档的流（默认 1080P 60帧）
+  - `高画质请求状态`：显示成功/失败原因，如「成功：最高 4K 超高清，共 6 档」
+  - `高画质所用账号`：确认发出去的是哪个账号（mid / 等级 / 硬币 / 大会员）
+  - `查看最近一次远端请求` / `查看最近一次远端响应`：可查看并复制全文，请求里的 cookie 已按 `name=***` 打码，便于排查或反馈
+  - `不忽略过短的远端流（调试）`：默认关闭，远端流比本地短 5 秒以上会判定为试看片段并忽略，避免只能播放几秒
+- **安全兜底**：远端请求失败、返回异常或流时长异常时一律回退到原生 playurl，不影响正常播放。
+- ⚠️ **风险提示**：该功能会把登录凭证（`SESSDATA` 等）发送到所配置的服务地址，请只填写自己信任或自建的服务。服务端不可信等于交出账号，建议用小号。
+
+### 播放进度自动点赞
+
+- 设置 → 播放设置 → `播放到指定进度自动点赞`（默认关闭）
+- `自动点赞进度`：滑块 10%~100%，默认 **95%**
+- 同一视频只触发一次（按 `bvid_cid` 去重，切分P 重新计算）；已点赞的视频直接跳过，不会变成「取消赞」；未登录不触发
+
+## 本地构建（Windows）
+
+> 这个工程不是拿来直接 `flutter build apk` 就能过的，下面几步缺一不可。
+
+1. **Flutter 版本**：`3.47.7`（Dart 3.13.5）
+2. **必须打补丁**：工程把一批 Flutter 框架里的私有类型改成了公开（如 `StandardBottomSheet`、`TabBarState`），所以要先执行
+   ```powershell
+   $env:FLUTTER_ROOT="<你的 flutter 目录>"
+   $env:GITHUB_WORKSPACE="<项目根目录>"
+   powershell -ExecutionPolicy Bypass -File .\lib\scripts\patch.ps1 -platform android
+   ```
+   该脚本会给 Flutter SDK 与 pub 缓存里的 `material_ui` / `cupertino_ui` 应用补丁；不打会直接报 `Type 'StandardBottomSheet' not found`。
+3. **依赖镜像**（国内网络）：`android/build.gradle.kts` 与 `android/settings.gradle.kts` 已加入阿里云 + 腾讯云镜像，用于替代不可达的 `maven.google.com` / `jitpack.io`；`gradle-wrapper.properties` 指向腾讯云镜像。
+4. **Kotlin 增量编译**：`android/gradle.properties` 中已关闭（`kotlin.incremental=false`），否则在「工程与 GRADLE_USER_HOME 不在同一盘符」时会因相对路径跨盘报错。
+5. **签名**：在 `android/` 下新建 `key.properties`：
+   ```properties
+   storeFile=pilinara.jks
+   storePassword=<你的密码>
+   keyAlias=<你的别名>
+   keyPassword=<你的密码>
+   ```
+   `pilinara.jks` 放在 `android/app/` 下。两者都已被 `.gitignore` 排除，**切勿提交**。
+6. **构建并注入版本号**（不修改 `pubspec.yaml`）：
+   ```powershell
+   $code = [int]([DateTimeOffset]::Now.ToUnixTimeSeconds() / 60)
+   flutter build apk --release --target-platform android-arm64 `
+     --build-name=2.1.6 --build-number=$code `
+     --dart-define=pili.code=$code --dart-define=pili.name=2.1.6 `
+     --dart-define=pili.time=[int][DateTimeOffset]::Now.ToUnixTimeSeconds()
+   ```
+   产物：`build/app/outputs/flutter-apk/app-release.apk`
+
 ## 改动说明(未来计划？)
 
 Fork特性：

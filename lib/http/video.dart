@@ -28,6 +28,7 @@ import 'package:PiliPlus/models_new/video/video_note_list/data.dart';
 import 'package:PiliPlus/models_new/video/video_play_info/data.dart';
 import 'package:PiliPlus/models_new/video/video_relation/data.dart';
 import 'package:PiliPlus/models_new/video/video_shot/data.dart';
+import 'package:PiliPlus/utils/high_quality_playback.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/app_sign.dart';
 import 'package:PiliPlus/utils/extension/string_ext.dart';
@@ -234,6 +235,7 @@ abstract final class VideoHttp {
     String? bvid,
     required int cid,
     required int qn,
+    int? duration,
     dynamic epid,
     dynamic seasonId,
     required bool tryLook,
@@ -304,6 +306,19 @@ abstract final class VideoHttp {
         };
     }
 
+    // 高画质播放（第三方服务代请求），失败时回退到正常请求
+    if (videoType == .ugc && HighQualityPlayback.enabled) {
+      final remote = await HighQualityPlayback.request(
+        avid: avid,
+        bvid: bvid,
+        cid: cid,
+        localDurationMs: duration,
+      );
+      if (remote != null) {
+        return Success(remote);
+      }
+    }
+
     try {
       final res = await Request().request(
         videoType.api,
@@ -343,6 +358,7 @@ abstract final class VideoHttp {
           bvid: bvid,
           cid: cid,
           qn: qn,
+          duration: duration,
           epid: epid,
           seasonId: seasonId,
           tryLook: tryLook,

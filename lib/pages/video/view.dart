@@ -650,6 +650,25 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     }
     videoDetailController.playedTime = position;
     videoDetailController.danmakuMaskController.updatePosition(position);
+    _checkAutoLikeProgress(position);
+  }
+
+  /// 播放进度达到设定百分比时自动点赞（同一视频只触发一次）
+  String? _autoLikeKey;
+  void _checkAutoLikeProgress(Duration position) {
+    if (!Pref.autoLikeOnProgress) return;
+    final percent = Pref.autoLikePercent;
+    if (percent <= 0) return;
+    final intro = introController;
+    if (!intro.isLogin || intro.hasLike.value) return;
+    final total = videoDetailController.plPlayerController.durationInMilliseconds;
+    if (total <= 0) return;
+    if (position.inMilliseconds * 100 < total * percent) return;
+    final key =
+        '${videoDetailController.bvid}_${videoDetailController.cid.value}';
+    if (_autoLikeKey == key) return;
+    _autoLikeKey = key;
+    intro.actionLikeVideo();
   }
 
   @override

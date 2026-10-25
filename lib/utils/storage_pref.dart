@@ -1242,6 +1242,28 @@ abstract final class Pref {
   static bool get p1080 =>
       _setting.get(SettingBoxKey.p1080, defaultValue: true);
 
+  static bool get highQualityPlayback =>
+      _setting.get(SettingBoxKey.highQualityPlayback, defaultValue: false);
+
+  static String get highQualityPlaybackServer =>
+      _setting.get(SettingBoxKey.highQualityPlaybackServer, defaultValue: '');
+
+  static int get highQualityPlaybackQuality => _setting.get(
+    SettingBoxKey.highQualityPlaybackQuality,
+    defaultValue: 116,
+  );
+
+  static bool get highQualityPlaybackIgnoreShort => _setting.get(
+    SettingBoxKey.highQualityPlaybackIgnoreShort,
+    defaultValue: false,
+  );
+
+  static bool get autoLikeOnProgress =>
+      _setting.get(SettingBoxKey.autoLikeOnProgress, defaultValue: false);
+
+  static int get autoLikePercent =>
+      _setting.get(SettingBoxKey.autoLikePercent, defaultValue: 95);
+
   static int get customColor =>
       _setting.get(SettingBoxKey.customColor, defaultValue: 0);
 

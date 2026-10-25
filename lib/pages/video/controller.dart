@@ -1068,6 +1068,7 @@ class VideoDetailController extends GetxController
       cid: cid.value,
       bvid: bvid,
       qn: quality,
+      duration: data.timeLength,
       epid: epId,
       seasonId: seasonId,
       tryLook: plPlayerController.tryLook,

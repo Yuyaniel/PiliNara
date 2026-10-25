@@ -161,7 +161,6 @@ class DynamicsUpPager extends StatefulWidget {
 class _DynamicsUpPagerState extends State<DynamicsUpPager> {
   PageController? _pageController;
   Worker? _midWorker;
-  double _dragDx = 0;
   List<UpItem> _upList = const [];
 
   DynamicsController get _controller => widget.dynamicsController;
@@ -221,30 +220,9 @@ class _DynamicsUpPagerState extends State<DynamicsUpPager> {
         children: [
           _header(context, colorScheme, currentUp),
           Expanded(
-            // 自己接管横滑：避免与 TabBarView 争手势
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onHorizontalDragStart: (_) => _dragDx = 0,
-              onHorizontalDragUpdate: (details) => _dragDx += details.delta.dx,
-              onHorizontalDragEnd: (_) {
-                // 按位移判定，避免依赖注入滑动速度
-                if (_dragDx.abs() < 60) return;
-                final page = (_pageController?.page ?? index.toDouble()).round();
-                final target = (page + (_dragDx < 0 ? 1 : -1)).clamp(
-                  0,
-                  upList.length - 1,
-                );
-                _dragDx = 0;
-                if (target != page) {
-                  _pageController?.animateToPage(
-                    target,
-                    duration: const Duration(milliseconds: 260),
-                    curve: Curves.easeOutCubic,
-                  );
-                }
-              },
-              child: PageView.builder(
-              physics: const NeverScrollableScrollPhysics(),
+            // 独立路由内没有 TabBarView 竞争，直接用原生 PageView：
+            // 拖动跟手 + 松手吸附动画
+            child: PageView.builder(
               controller: _pageController,
               itemCount: upList.length,
               onPageChanged: (page) {
@@ -257,7 +235,6 @@ class _DynamicsUpPagerState extends State<DynamicsUpPager> {
                   mid: up.mid,
                 );
               },
-              ),
             ),
           ),
         ],

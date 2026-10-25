@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/gradient_background.dart';
 import 'package:PiliPlus/pages/dynamics/controller.dart';
 import 'package:PiliPlus/pages/dynamics/widgets/up_feed_pager.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
@@ -21,8 +22,9 @@ class UpDynamicsPage extends StatelessWidget {
     controller.markUpRead(initialMid);
 
     return Scaffold(
-      backgroundColor: ColorScheme.of(context).surface,
-      body: SafeArea(
+      backgroundColor: Colors.transparent,
+      body: GradientBackground(
+        child: SafeArea(
         child: Column(
           children: [
             // 顶部 UP 头像栏（与关注动态页一致）
@@ -42,6 +44,7 @@ class UpDynamicsPage extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

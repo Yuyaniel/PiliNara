@@ -1,14 +1,141 @@
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
+import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/http/dynamics.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/dynamic/dynamics_type.dart';
-import 'package:PiliPlus/models/dynamics/result.dart';
+import 'package:PiliPlus/models/dynamics/result.dart' hide Badge;
 import 'package:PiliPlus/models/dynamics/up.dart';
 import 'package:PiliPlus/pages/dynamics/controller.dart';
 import 'package:PiliPlus/pages/dynamics/widgets/dynamic_panel.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart' hide RefreshIndicatorState;
+
+/// 全屏页顶部的 UP 头像栏：点击切换 UP，选中项显示箭头与高亮
+class UpAvatarStrip extends StatefulWidget {
+  const UpAvatarStrip({
+    super.key,
+    required this.dynamicsController,
+    required this.onSelect,
+  });
+
+  final DynamicsController dynamicsController;
+  final ValueChanged<int> onSelect;
+
+  @override
+  State<UpAvatarStrip> createState() => _UpAvatarStripState();
+}
+
+class _UpAvatarStripState extends State<UpAvatarStrip> {
+  final Map<int, GlobalKey> _keys = {};
+  Worker? _worker;
+
+  @override
+  void initState() {
+    super.initState();
+    _worker = ever(widget.dynamicsController.currentMidRx, (mid) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final ctx = _keys[mid]?.currentContext;
+        if (ctx != null) {
+          Scrollable.ensureVisible(
+            ctx,
+            alignment: 0.5,
+            duration: const Duration(milliseconds: 240),
+            curve: Curves.easeOutCubic,
+          );
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _worker?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final controller = widget.dynamicsController;
+    return Obx(() {
+      final state = controller.loadingState.value;
+      final upList = state is Success<FollowUpModel>
+          ? (state.response.upList?.where((e) => e.mid != -1).toList() ??
+                const <UpItem>[])
+          : const <UpItem>[];
+      if (upList.isEmpty) return const SizedBox.shrink();
+      final currentMid = controller.currentMid;
+      return SizedBox(
+        height: 78,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          itemCount: upList.length,
+          itemBuilder: (context, index) {
+            final item = upList[index];
+            final isCurrent = item.mid == currentMid;
+            return SizedBox(
+              key: _keys.putIfAbsent(item.mid, GlobalKey.new),
+              width: 70,
+              child: InkWell(
+                onTap: () => widget.onSelect(item.mid),
+                child: Opacity(
+                  opacity: isCurrent ? 1 : 0.6,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          NetworkImgLayer(
+                            width: 38,
+                            height: 38,
+                            src: item.face,
+                            type: .avatar,
+                          ),
+                          if (item.hasUpdate ?? false)
+                            Positioned(
+                              right: 2,
+                              bottom: 0,
+                              child: Badge(
+                                smallSize: 8,
+                                backgroundColor: theme.colorScheme.primary,
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        item.uname ?? '',
+                        maxLines: 2,
+                        textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          height: 1.1,
+                          color: isCurrent
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.outline,
+                        ),
+                      ),
+                      if (isCurrent)
+                        Icon(
+                          Icons.arrow_drop_up,
+                          size: 12,
+                          color: theme.colorScheme.primary,
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    });
+  }
+}
 
 /// UP 动态分页器
 ///

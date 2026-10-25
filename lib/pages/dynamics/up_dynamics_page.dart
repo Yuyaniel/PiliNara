@@ -23,9 +23,24 @@ class UpDynamicsPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: ColorScheme.of(context).surface,
       body: SafeArea(
-        child: DynamicsUpPager(
-          dynamicsController: controller,
-          onClose: () => Navigator.of(context).maybePop(),
+        child: Column(
+          children: [
+            // 顶部 UP 头像栏（与关注动态页一致）
+            UpAvatarStrip(
+              dynamicsController: controller,
+              onSelect: (mid) {
+                controller.hostMid = mid;
+                controller.currentMid = mid;
+                controller.markUpRead(mid);
+              },
+            ),
+            Expanded(
+              child: DynamicsUpPager(
+                dynamicsController: controller,
+                onClose: () => Navigator.of(context).maybePop(),
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -2293,6 +2293,38 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
         plPlayer(width: width, height: height),
 
+        // 全屏左下角：多少人在看（复刻 B 站样式）
+        Obx(() {
+          if (!isFullScreen || !introController.isShowOnlineTotal) {
+            return const SizedBox.shrink();
+          }
+          return Positioned(
+            left: 12,
+            bottom: 58,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.people_alt_outlined,
+                  size: 12,
+                  color: Colors.white70,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '${introController.total.value}人正在看',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    shadows: [
+                      Shadow(blurRadius: 2, color: Colors.black54),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+
         Obx(() {
           if (!videoDetailController.autoPlay) {
             return Positioned.fill(

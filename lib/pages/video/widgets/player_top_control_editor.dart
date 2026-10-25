@@ -26,89 +26,34 @@ abstract final class PlayerTopControls {
 
   static bool isEnabled(String id) => Pref.playerTopControls.contains(id);
 
-  /// 打开控件编辑面板，保存后回调刷新
-  static Future<void> show(
-    BuildContext context, {
-    required VoidCallback onChanged,
-  }) async {
-    final enabled = Set<String>.from(
-      Pref.playerTopControls.where(meta.containsKey),
-    );
-    final result = await showDialog<Set<String>>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setLocalState) => AlertDialog(
-          title: const Row(
-            children: [
-              Icon(Icons.tune, size: 18),
-              SizedBox(width: 8),
-              Text('控件编辑'),
-            ],
-          ),
-          contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          content: SizedBox(
-            width: 330,
-            child: Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 12,
-              runSpacing: 16,
-              children: [
-                for (final entry in meta.entries)
-                  _ControlChip(
-                    icon: entry.value.$2,
-                    label: entry.value.$1,
-                    enabled: enabled.contains(entry.key),
-                    onTap: () => setLocalState(() {
-                      if (!enabled.remove(entry.key)) {
-                        enabled.add(entry.key);
-                      }
-                    }),
-                  ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('取消'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, enabled),
-              child: const Text('完成编辑'),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (result != null) {
-      await GStorage.setting.put(
-        SettingBoxKey.playerTopControls,
-        result.toList(),
-      );
-      onChanged();
-    }
-  }
+  static Set<String> current() =>
+      Pref.playerTopControls.where(meta.containsKey).toSet();
+
+  static Future<void> save(Set<String> ids) => GStorage.setting.put(
+    SettingBoxKey.playerTopControls,
+    ids.toList(),
+  );
 }
 
 const Color _kActive = Color(0xFFFE6699);
 
-class _ControlChip extends StatelessWidget {
-  const _ControlChip({
-    required this.icon,
-    required this.label,
+/// 编辑态下的单个控件：虚线圆角框 + 右上角勾选角标，点击切换
+class PlayerTopControlChip extends StatelessWidget {
+  const PlayerTopControlChip({
+    super.key,
+    required this.id,
     required this.enabled,
     required this.onTap,
   });
 
-  final IconData icon;
-  final String label;
+  final String id;
   final bool enabled;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final color = enabled ? _kActive : colorScheme.outline;
+    final meta = PlayerTopControls.meta[id]!;
+    final color = enabled ? _kActive : Colors.white70;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -117,22 +62,22 @@ class _ControlChip extends StatelessWidget {
         children: [
           CustomPaint(
             painter: _DashedBorderPainter(
-              color: color,
+              color: enabled ? _kActive : Colors.white38,
               radius: 8,
               dashWidth: 4,
               dashGap: 3,
             ),
             child: SizedBox(
-              width: 92,
-              height: 72,
+              width: 52,
+              height: 40,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(icon, size: 22, color: color),
-                  const SizedBox(height: 6),
+                  Icon(meta.$2, size: 16, color: color),
+                  const SizedBox(height: 2),
                   Text(
-                    label,
-                    style: TextStyle(fontSize: 11, color: color),
+                    meta.$1,
+                    style: TextStyle(fontSize: 8, color: color),
                   ),
                 ],
               ),
@@ -140,15 +85,15 @@ class _ControlChip extends StatelessWidget {
           ),
           if (enabled)
             Positioned(
-              right: -6,
-              top: -6,
+              right: -5,
+              top: -5,
               child: Container(
-                padding: const EdgeInsets.all(2),
+                padding: const EdgeInsets.all(1.5),
                 decoration: const BoxDecoration(
                   color: _kActive,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.check, size: 12, color: Colors.white),
+                child: const Icon(Icons.check, size: 9, color: Colors.white),
               ),
             ),
         ],

@@ -1945,22 +1945,6 @@ class HeaderControlState extends State<HeaderControl>
                         plPlayerController.onPopInvokedWithResult(false, null),
                   ),
                 ),
-                if (!plPlayerController.isDesktopPip &&
-                    (!isFullScreen || !isPortrait))
-                  SizedBox(
-                    width: btnWidth,
-                    height: btnHeight,
-                    child: IconButton(
-                      tooltip: '返回主页',
-                      style: btnStyle,
-                      icon: const Icon(
-                        FontAwesomeIcons.house,
-                        size: 15,
-                        color: Colors.white,
-                      ),
-                      onPressed: plPlayerController.onCloseAll,
-                    ),
-                  ),
               ],
             ),
             right: Row(
@@ -2167,6 +2151,93 @@ class HeaderControlState extends State<HeaderControl>
             ),
             title: title,
           ),
+          if (!isFileSource)
+            Padding(
+              padding: const EdgeInsets.only(left: 12, top: 4, bottom: 2),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Obx(() {
+                  final owner = introController.videoDetail.value.owner;
+                  if (owner == null) return const SizedBox.shrink();
+                  final ugc = introController is UgcIntroController
+                      ? introController as UgcIntroController
+                      : null;
+                  final attr = ugc?.followStatus.value.attribute ?? 0;
+                  final followed = attr != 0 && attr != 128;
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ClipOval(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: owner.face?.isNotEmpty == true
+                              ? Image.network(
+                                  owner.face!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, _, _) => const Icon(
+                                    Icons.person,
+                                    size: 12,
+                                    color: Colors.white70,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.person,
+                                  size: 12,
+                                  color: Colors.white70,
+                                ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 120),
+                        child: Text(
+                          owner.name ?? '',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            shadows: [
+                              Shadow(blurRadius: 2, color: Colors.black54),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () {
+                          if (ugc != null && !followed) {
+                            ugc.actionRelationMod(context);
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: followed
+                                ? Colors.white24
+                                : const Color(0xFFFE6699),
+                            borderRadius: const BorderRadius.all(
+                              Radius.circular(10),
+                            ),
+                          ),
+                          child: Text(
+                            followed ? '已关注' : '+ 关注',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }),
+              ),
+            ),
           if (showFSActionItem)
             Row(
               mainAxisAlignment: .end,

@@ -1,6 +1,6 @@
 <div align="center">
   <img width="180" src="assets/images/logo/logo.png">
-  <h1>PiliNara</h1>
+  <h1>Pilione</h1>
   <p>第三方哔哩哔哩客户端 · 自用修改版</p>
   <p>基于 <a href="https://github.com/bggRGjQaUbCoE/PiliPlus">PiliPlus</a> / <a href="https://github.com/Starfallan/PiliNara">PiliNara</a></p>
 </div>
@@ -105,10 +105,10 @@
 
 3. **依赖镜像**（国内网络）：`android/build.gradle.kts` 与 `android/settings.gradle.kts` 已加入阿里云 + 腾讯云镜像，替代不可达的 `maven.google.com` / `jitpack.io`；`gradle-wrapper.properties` 指向腾讯云镜像。
 4. **Kotlin 增量编译**：`android/gradle.properties` 中已关闭（`kotlin.incremental=false`）。工程与 `GRADLE_USER_HOME` 不在同一盘符时，增量缓存会因相对路径跨盘而报错。
-5. **签名**：在 `android/` 下新建 `key.properties`，并把 `pilinara.jks` 放到 `android/app/`：
+5. **签名**：在 `android/` 下新建 `key.properties`，并把 `pilione.jks` 放到 `android/app/`：
 
    ```properties
-   storeFile=pilinara.jks
+   storeFile=pilione.jks
    storePassword=<你的密码>
    keyAlias=<你的别名>
    keyPassword=<你的密码>

@@ -157,7 +157,7 @@ abstract final class ConfigArchive {
         final tmpFile = File(
           path.join(
             Directory.systemTemp.path,
-            'pilinara_font_import${path.extension(fontEntry.name)}',
+            'pilione_font_import${path.extension(fontEntry.name)}',
           ),
         );
         await tmpFile.writeAsBytes(fontEntry.content);

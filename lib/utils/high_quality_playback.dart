@@ -44,17 +44,38 @@ abstract final class HighQualityPlayback {
   /// 最近一次结果摘要
   static String? lastStatus;
 
+  /// 远端失败后的冷却截止时间，避免每次起播都等超时
+  static DateTime? _cooldownUntil;
+
   static bool get enabled =>
-      Pref.highQualityPlayback && Pref.highQualityPlaybackServer.isNotEmpty;
+      Pref.highQualityPlayback &&
+      Pref.highQualityPlaybackServer.isNotEmpty &&
+      !_inCooldown;
+
+  static bool get _inCooldown {
+    final until = _cooldownUntil;
+    if (until == null) return false;
+    if (DateTime.now().isAfter(until)) {
+      _cooldownUntil = null;
+      return false;
+    }
+    return true;
+  }
+
+  /// 失败后 30 秒内不再尝试，起播优先保证速度
+  static void _enterCooldown() {
+    _cooldownUntil = DateTime.now().add(const Duration(seconds: 30));
+  }
 
   static Dio? _dio;
 
   static Dio get _client =>
       _dio ??= Dio(
         BaseOptions(
-          connectTimeout: const Duration(seconds: 10),
-          sendTimeout: const Duration(seconds: 10),
-          receiveTimeout: const Duration(seconds: 20),
+          // 起播路径上的前置请求，超时必须短，慢就直接回退本地 playurl
+          connectTimeout: const Duration(milliseconds: 2500),
+          sendTimeout: const Duration(milliseconds: 2500),
+          receiveTimeout: const Duration(seconds: 8),
           headers: const {
             'user-agent': desktopUa,
             'accept': '*/*',
@@ -147,21 +168,25 @@ abstract final class HighQualityPlayback {
       final body = jsonDecode(raw);
       if (body is! Map) {
         lastStatus = '失败：响应不是 JSON 对象';
+        _enterCooldown();
         return null;
       }
       if (body['code'] != 0) {
         lastStatus = '失败：服务端返回 code=${body['code']}'
             '${body['message'] == null ? '' : '，${body['message']}'}';
+        _enterCooldown();
         return null;
       }
       final data = body['data'];
       if (data is! Map) {
         lastStatus = '失败：响应缺少 data';
+        _enterCooldown();
         return null;
       }
       final playUrl = PlayUrlModel.fromJson(data.cast<String, dynamic>());
       if (playUrl.dash?.video?.isNotEmpty != true) {
         lastStatus = '失败：响应里没有可用视频流（服务端可能判定无需处理）';
+        _enterCooldown();
         return null;
       }
 
@@ -184,6 +209,7 @@ abstract final class HighQualityPlayback {
       return playUrl;
     } catch (e) {
       lastStatus = '失败：$e';
+      _enterCooldown();
       return null;
     }
   }

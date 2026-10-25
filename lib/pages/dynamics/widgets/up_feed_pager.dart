@@ -1,3 +1,5 @@
+import 'package:flutter/gestures.dart';
+
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
@@ -220,9 +222,30 @@ class _DynamicsUpPagerState extends State<DynamicsUpPager> {
         children: [
           _header(context, colorScheme, currentUp),
           Expanded(
-            // 独立路由内没有 TabBarView 竞争，直接用原生 PageView：
-            // 拖动跟手 + 松手吸附动画
-            child: PageView.builder(
+            // 竖向滚动优先 + 水平阈值 30px，避免上下刷动态时误触翻页
+            child: NotificationListener<ScrollNotification>(
+              onNotification: _onScrollNotification,
+              child: RawGestureDetector(
+                behavior: HitTestBehavior.opaque,
+                gestures: <Type, GestureRecognizerFactory>{
+                  _LowSensitivityHorizontalDragRecognizer:
+                      GestureRecognizerFactoryWithHandlers<
+                        _LowSensitivityHorizontalDragRecognizer
+                      >(
+                        () => _LowSensitivityHorizontalDragRecognizer(
+                          debugOwner: this,
+                        ),
+                        (instance) {
+                          instance
+                            ..onStart = _onDragStart
+                            ..onUpdate = _onDragUpdate
+                            ..onEnd = _onDragEnd
+                            ..onCancel = _onDragCancel;
+                        },
+                      ),
+                },
+                child: PageView.builder(
+              physics: const NeverScrollableScrollPhysics(),
               controller: _pageController,
               itemCount: upList.length,
               onPageChanged: (page) {
@@ -235,11 +258,91 @@ class _DynamicsUpPagerState extends State<DynamicsUpPager> {
                   mid: up.mid,
                 );
               },
+                ),
+              ),
             ),
           ),
         ],
       );
     });
+  }
+
+  /// 竖向滚动时间戳：300ms 内忽略横向手势
+  int? _verticalScrollTs;
+  double? _dragStartPixels;
+  double _dragDx = 0;
+
+  bool _onScrollNotification(ScrollNotification notification) {
+    if (notification is ScrollStartNotification &&
+        notification.dragDetails != null &&
+        notification.metrics.axis == Axis.vertical) {
+      _verticalScrollTs = DateTime.now().millisecondsSinceEpoch;
+    }
+    return false;
+  }
+
+  ScrollPosition? get _pagePosition =>
+      _pageController?.hasClients == true ? _pageController!.position : null;
+
+  bool get _verticalActive {
+    final ts = _verticalScrollTs;
+    return ts != null && DateTime.now().millisecondsSinceEpoch - ts < 300;
+  }
+
+  void _onDragStart(DragStartDetails details) {
+    _dragDx = 0;
+    // 刚发生过竖向滚动，直接忽略这次横滑
+    _dragStartPixels = _verticalActive ? null : _pagePosition?.pixels;
+  }
+
+  void _onDragUpdate(DragUpdateDetails details) {
+    _dragDx += details.delta.dx;
+    final start = _dragStartPixels;
+    final position = _pagePosition;
+    if (start == null || position == null) return;
+    position.jumpTo(
+      (start - _dragDx).clamp(
+        position.minScrollExtent,
+        position.maxScrollExtent,
+      ),
+    );
+  }
+
+  void _onDragEnd(DragEndDetails details) {
+    final start = _dragStartPixels;
+    _dragStartPixels = null;
+    if (start == null) return;
+    final pageController = _pageController;
+    if (pageController == null || !pageController.hasClients) return;
+    final page = pageController.page ?? start;
+    var target = page.round();
+    if (_dragDx < -30) {
+      target = page.floor() + 1;
+    } else if (_dragDx > 30) {
+      target = page.ceil() - 1;
+    }
+    _dragDx = 0;
+    final maxPage = _upList.isEmpty ? 0 : _upList.length - 1;
+    pageController.animateToPage(
+      target.clamp(0, maxPage),
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  void _onDragCancel() {
+    final start = _dragStartPixels;
+    _dragStartPixels = null;
+    _dragDx = 0;
+    if (start == null) return;
+    final pageController = _pageController;
+    if (pageController != null && pageController.hasClients) {
+      pageController.animateToPage(
+        (pageController.page ?? 0).round(),
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+      );
+    }
   }
 
   Widget _header(BuildContext context, ColorScheme colorScheme, UpItem up) {
@@ -387,4 +490,19 @@ class _UpDynamicsFeedState extends State<_UpDynamicsFeed>
       ),
     );
   }
+}
+
+/// 水平拖拽识别器：触发阈值由默认约 18px 提高到 30px，
+/// 减少上下滑动时被误判为横向翻页
+class _LowSensitivityHorizontalDragRecognizer
+    extends HorizontalDragGestureRecognizer {
+  _LowSensitivityHorizontalDragRecognizer({super.debugOwner});
+
+  static const double _threshold = 30;
+
+  @override
+  bool hasSufficientGlobalDistanceToAccept(
+    PointerDeviceKind pointerDeviceKind,
+    double? deviceTouchSlop,
+  ) => globalDistanceMoved.abs() > _threshold;
 }

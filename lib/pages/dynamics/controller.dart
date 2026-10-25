@@ -86,6 +86,7 @@ class DynamicsController
     }
 
     currentMid = mid;
+    markUpRead(mid);
     _jumpToTab(mid);
   }
 
@@ -94,6 +95,23 @@ class DynamicsController
     if (currentMid == mid) return;
     hostMid = mid;
     currentMid = mid;
+    markUpRead(mid);
+  }
+
+  /// 把指定 UP 标记为已读（清除头像红点），与选中态同步
+  void markUpRead(int mid) {
+    if (mid == -1) return;
+    if (loadingState.value case Success(:final response)) {
+      final upList = response.upList;
+      if (upList == null) return;
+      for (final item in upList) {
+        if (item.mid == mid && item.hasUpdate == true) {
+          item.hasUpdate = false;
+          loadingState.refresh();
+          break;
+        }
+      }
+    }
   }
 
   /// 退出 UP 模式，回到普通 tab 模式

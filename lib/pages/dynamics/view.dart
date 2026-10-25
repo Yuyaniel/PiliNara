@@ -7,7 +7,6 @@ import 'package:PiliPlus/pages/common/common_page.dart';
 import 'package:PiliPlus/pages/dynamics/controller.dart';
 import 'package:PiliPlus/pages/dynamics/widgets/up_panel.dart';
 import 'package:PiliPlus/pages/dynamics_create/view.dart';
-import 'package:PiliPlus/pages/dynamics/widgets/up_feed_pager.dart';
 import 'package:PiliPlus/pages/dynamics_tab/view.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
@@ -144,13 +143,8 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
           .toList(),
     );
 
-    // UP 模式与普通 tab 模式互斥：UP 模式下由分页器接管内容
-    Widget child = Obx(() {
-      if (_dynamicsController.currentMid == -1) {
-        return normalChild;
-      }
-      return DynamicsUpPager(dynamicsController: _dynamicsController);
-    });
+    // UP 动态在独立全屏页展示，这里始终是普通 tab 内容
+    Widget child = normalChild;
 
     switch (upPanelPosition) {
       case .top:

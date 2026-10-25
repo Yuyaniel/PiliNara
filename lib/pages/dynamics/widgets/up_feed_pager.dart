@@ -16,9 +16,16 @@ import 'package:material_ui/material_ui.dart' hide RefreshIndicatorState;
 /// - 点头像 → [DynamicsController.onSelectUp] → currentMid 变化 → 本组件跟随翻页
 /// - 左右滑动 → [DynamicsController.onSwipeUp] → currentMid 变化 → 头像行高亮跟随
 class DynamicsUpPager extends StatefulWidget {
-  const DynamicsUpPager({super.key, required this.dynamicsController});
+  const DynamicsUpPager({
+    super.key,
+    required this.dynamicsController,
+    this.onClose,
+  });
 
   final DynamicsController dynamicsController;
+
+  /// 关闭回调：全屏页里传 pop，内嵌模式默认退出 UP 模式
+  final VoidCallback? onClose;
 
   @override
   State<DynamicsUpPager> createState() => _DynamicsUpPagerState();
@@ -27,6 +34,7 @@ class DynamicsUpPager extends StatefulWidget {
 class _DynamicsUpPagerState extends State<DynamicsUpPager> {
   PageController? _pageController;
   Worker? _midWorker;
+  double _dragDx = 0;
   List<UpItem> _upList = const [];
 
   DynamicsController get _controller => widget.dynamicsController;
@@ -86,7 +94,30 @@ class _DynamicsUpPagerState extends State<DynamicsUpPager> {
         children: [
           _header(context, colorScheme, currentUp),
           Expanded(
-            child: PageView.builder(
+            // 自己接管横滑：避免与 TabBarView 争手势
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onHorizontalDragStart: (_) => _dragDx = 0,
+              onHorizontalDragUpdate: (details) => _dragDx += details.delta.dx,
+              onHorizontalDragEnd: (_) {
+                // 按位移判定，避免依赖注入滑动速度
+                if (_dragDx.abs() < 60) return;
+                final page = (_pageController?.page ?? index.toDouble()).round();
+                final target = (page + (_dragDx < 0 ? 1 : -1)).clamp(
+                  0,
+                  upList.length - 1,
+                );
+                _dragDx = 0;
+                if (target != page) {
+                  _pageController?.animateToPage(
+                    target,
+                    duration: const Duration(milliseconds: 260),
+                    curve: Curves.easeOutCubic,
+                  );
+                }
+              },
+              child: PageView.builder(
+              physics: const NeverScrollableScrollPhysics(),
               controller: _pageController,
               itemCount: upList.length,
               onPageChanged: (page) {
@@ -99,6 +130,7 @@ class _DynamicsUpPagerState extends State<DynamicsUpPager> {
                   mid: up.mid,
                 );
               },
+              ),
             ),
           ),
         ],
@@ -125,7 +157,7 @@ class _DynamicsUpPagerState extends State<DynamicsUpPager> {
           ),
           IconButton(
             tooltip: '退出 UP 动态',
-            onPressed: _controller.exitUpMode,
+            onPressed: widget.onClose ?? _controller.exitUpMode,
             icon: const Icon(Icons.close, size: 20),
           ),
           const SizedBox(width: 4),

@@ -3,6 +3,7 @@ import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/models/common/dynamic/up_panel_position.dart';
 import 'package:PiliPlus/models/dynamics/up.dart';
 import 'package:PiliPlus/pages/dynamics/controller.dart';
+import 'package:PiliPlus/pages/dynamics/up_dynamics_page.dart';
 import 'package:PiliPlus/pages/live_follow/view.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
@@ -36,6 +37,34 @@ class _UpPanelState extends State<UpPanel> {
   late final isTop = controller.upPanelPosition == UpPanelPosition.top;
 
   void toFollowPage() => Get.to(const LiveFollowPage());
+
+  /// 头像项的定位 Key，用于切换 UP 时自动滚动到可视区
+  final Map<int, GlobalKey> _upItemKeys = {};
+  Worker? _midWorker;
+
+  @override
+  void initState() {
+    super.initState();
+    _midWorker = ever(controller.currentMidRx, (mid) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final ctx = _upItemKeys[mid]?.currentContext;
+        if (ctx != null) {
+          Scrollable.ensureVisible(
+            ctx,
+            alignment: 0.5,
+            duration: const Duration(milliseconds: 240),
+            curve: Curves.easeOutCubic,
+          );
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _midWorker?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -145,7 +174,13 @@ class _UpPanelState extends State<UpPanel> {
 
   void _onSelect(UpItem item) {
     item.hasUpdate = false;
-    controller.onSelectUp(item.mid);
+    if (item.mid == -1) {
+      controller.exitUpMode();
+      setState(() {});
+      return;
+    }
+    // 进入该 UP 的动态全屏页（页内可左右滑动切换其他 UP）
+    Get.to(() => UpDynamicsPage(initialMid: item.mid));
     setState(() {});
   }
 
@@ -218,9 +253,14 @@ class _UpPanelState extends State<UpPanel> {
     }
 
     return SizedBox(
+      key: _upItemKeys.putIfAbsent(item.mid, GlobalKey.new),
       height: 76,
       width: isTop ? 70 : null,
-      child: InkWell(
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: InkWell(
         onTap: () {
           feedBack();
           if (isLive) {
@@ -258,6 +298,21 @@ class _UpPanelState extends State<UpPanel> {
             ],
           ),
         ),
+            ),
+          ),
+          // 当前停留的 UP：底部箭头指示器
+          if (!isAll && !isLive && currentMid == item.mid)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Icon(
+                isTop ? Icons.arrow_drop_up : Icons.arrow_right,
+                size: 14,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+        ],
       ),
     );
   }

@@ -1,34 +1,18 @@
+import 'dart:async';
+
 import 'package:media_kit/media_kit.dart' show NativePlayer;
 import 'package:material_ui/material_ui.dart';
 
 /// 播放信息侧栏
 ///
-/// 数据全部取自媒体引擎的 `video-params`（分辨率 / 色彩矩阵）与
-/// `video-track`（编码 / 帧率），与「更多 → 播放信息」同源。
+/// 数据取自媒体引擎属性：
+/// - `video-params`：分辨率 / 色彩矩阵
+/// - `video-track`：编码 / 帧率
+/// - `video-bitrate` / `demuxer-cache-speed`：实时码率与下载速度（每秒刷新）
 Future<void> showPlayerInfoPanel(
   BuildContext context, {
   required NativePlayer player,
 }) {
-  final state = player.state;
-  final params = state.videoParams;
-  final video = state.track.video;
-
-  final width = params.w ?? video.w;
-  final height = params.h ?? video.h;
-  final fps = video.fps;
-
-  final rows = <(String, String)>[
-    ('编码', _nonEmpty(video.codec)),
-    (
-      '分辨率',
-      width != null && height != null && width > 0 && height > 0
-          ? '${width}x$height'
-          : '-',
-    ),
-    ('帧率', fps == null ? '-' : fps.toStringAsFixed(1)),
-    ('色彩矩阵', _nonEmpty(params.colormatrix)),
-  ];
-
   return showGeneralDialog<void>(
     context: context,
     barrierDismissible: true,
@@ -37,7 +21,7 @@ Future<void> showPlayerInfoPanel(
     transitionDuration: const Duration(milliseconds: 220),
     pageBuilder: (context, _, _) => Align(
       alignment: Alignment.centerRight,
-      child: _PlayerInfoPanel(rows: rows),
+      child: _PlayerInfoPanel(player: player),
     ),
     transitionBuilder: (context, animation, _, child) {
       final curved = CurvedAnimation(
@@ -60,13 +44,76 @@ String _nonEmpty(String? value) {
   return value;
 }
 
-class _PlayerInfoPanel extends StatelessWidget {
-  const _PlayerInfoPanel({required this.rows});
+/// 实时视频码率：mpv 的 `video-bitrate` 单位是 bit/s
+String _formatBitrate(NativePlayer player) {
+  final raw = player.getProperty('video-bitrate');
+  final bps = double.tryParse(raw);
+  if (bps == null || bps <= 0) return '-';
+  if (bps >= 1000 * 1000) {
+    return '${(bps / 1000 / 1000).toStringAsFixed(2)} Mbps';
+  }
+  return '${(bps / 1000).toStringAsFixed(0)} kbps';
+}
 
-  final List<(String, String)> rows;
+/// 已缓存的时长（秒）
+String _formatCacheDuration(NativePlayer player) {
+  final raw = player.getProperty('demuxer-cache-duration');
+  final seconds = double.tryParse(raw);
+  if (seconds == null || seconds <= 0) return '-';
+  return '${seconds.toStringAsFixed(1)} s';
+}
+
+class _PlayerInfoPanel extends StatefulWidget {
+  const _PlayerInfoPanel({required this.player});
+
+  final NativePlayer player;
+
+  @override
+  State<_PlayerInfoPanel> createState() => _PlayerInfoPanelState();
+}
+
+class _PlayerInfoPanelState extends State<_PlayerInfoPanel> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    // 码率与下载速度是实时值，每秒刷新
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final state = widget.player.state;
+    final params = state.videoParams;
+    final video = state.track.video;
+
+    final width = params.w ?? video.w;
+    final height = params.h ?? video.h;
+    final fps = video.fps;
+
+    final rows = <(String, String)>[
+      ('编码', _nonEmpty(video.codec)),
+      (
+        '分辨率',
+        width != null && height != null && width > 0 && height > 0
+            ? '${width}x$height'
+            : '-',
+      ),
+      ('帧率', fps == null ? '-' : fps.toStringAsFixed(1)),
+      ('色彩矩阵', _nonEmpty(params.colormatrix)),
+      ('视频码率', _formatBitrate(widget.player)),
+      ('缓存时长', _formatCacheDuration(widget.player)),
+    ];
+
     return Material(
       color: Colors.black.withValues(alpha: 0.82),
       child: SizedBox(
@@ -94,7 +141,7 @@ class _PlayerInfoPanel extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
-                      vertical: 8,
+                      vertical: 6,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

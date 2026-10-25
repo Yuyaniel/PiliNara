@@ -26,7 +26,13 @@ class DynamicsController
   late int _page = 1;
   late bool _isEnd = false;
   Set<UpItem>? _cacheUpList;
-  late int hostMid = -1, currentMid = -1;
+  late int hostMid = -1;
+
+  /// UP 模式选中态：-1 表示普通模式（全部/投稿/番剧/专栏）
+  /// 头像行、UP 分页器、标题栏共用此唯一数据源
+  final RxInt currentMidRx = (-1).obs;
+  int get currentMid => currentMidRx.value;
+  set currentMid(int value) => currentMidRx.value = value;
   late bool showLiveUp = Pref.expandDynLivePanel;
   late final _showAllUp = Pref.dynamicsShowAllFollowedUp;
 
@@ -81,6 +87,20 @@ class DynamicsController
 
     currentMid = mid;
     _jumpToTab(mid);
+  }
+
+  /// 分页器左右滑动切换 UP：只更新选中态，不触发 tab 跳转与列表重载
+  void onSwipeUp(int mid) {
+    if (currentMid == mid) return;
+    hostMid = mid;
+    currentMid = mid;
+  }
+
+  /// 退出 UP 模式，回到普通 tab 模式
+  void exitUpMode() {
+    hostMid = -1;
+    currentMid = -1;
+    _jumpToTab(-1);
   }
 
   Future<void> singleRefresh() {

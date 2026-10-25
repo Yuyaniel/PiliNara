@@ -7,6 +7,7 @@ import 'package:PiliPlus/pages/common/common_page.dart';
 import 'package:PiliPlus/pages/dynamics/controller.dart';
 import 'package:PiliPlus/pages/dynamics/widgets/up_panel.dart';
 import 'package:PiliPlus/pages/dynamics_create/view.dart';
+import 'package:PiliPlus/pages/dynamics/widgets/up_feed_pager.dart';
 import 'package:PiliPlus/pages/dynamics_tab/view.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
@@ -55,6 +56,18 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
   Widget upPanelPart(ColorScheme colorScheme) {
     final isTop = upPanelPosition == .top;
     final needBg = upPanelPosition.index > 2;
+    // 依赖 currentMid：滑动切换 UP 时同步头像高亮
+    return Obx(() {
+      _dynamicsController.currentMid;
+      return _buildUpPanelPart(colorScheme, isTop, needBg);
+    });
+  }
+
+  Widget _buildUpPanelPart(
+    ColorScheme colorScheme,
+    bool isTop,
+    bool needBg,
+  ) {
     return Material(
       type: needBg ? .canvas : .transparency,
       color: needBg ? colorScheme.surface : null,
@@ -124,12 +137,20 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
     Widget? leading;
     Widget actions;
 
-    Widget child = tabBarView(
+    final normalChild = tabBarView(
       controller: _dynamicsController.tabController,
       children: DynamicsTabType.values
           .map((e) => DynamicsTabPage(dynamicsType: e))
           .toList(),
     );
+
+    // UP 模式与普通 tab 模式互斥：UP 模式下由分页器接管内容
+    Widget child = Obx(() {
+      if (_dynamicsController.currentMid == -1) {
+        return normalChild;
+      }
+      return DynamicsUpPager(dynamicsController: _dynamicsController);
+    });
 
     switch (upPanelPosition) {
       case .top:
@@ -193,6 +214,10 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
                     .map((e) => Tab(text: e.label))
                     .toList(),
                 onTap: (index) {
+                  // UP 模式下点任意 tab 先退出 UP 模式
+                  if (_dynamicsController.currentMid != -1) {
+                    _dynamicsController.exitUpMode();
+                  }
                   if (!_dynamicsController.tabController.indexIsChanging) {
                     if (Pref.enableCurrentPageRefresh) {
                       _dynamicsController.toTopAndRefresh();

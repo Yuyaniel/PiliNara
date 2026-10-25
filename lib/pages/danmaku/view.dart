@@ -235,6 +235,8 @@ class _PlDanmakuState extends State<PlDanmaku> {
 
   @override
   Widget build(BuildContext context) {
+    // 回填画布高度，供「弹幕行数 → 显示区域」换算
+    DanmakuOptions.canvasHeight = widget.size.height;
     final option = DanmakuOptions.get(
       notFullscreen: widget.notFullscreen,
       speed: playerController.playbackSpeed,

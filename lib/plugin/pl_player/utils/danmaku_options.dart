@@ -14,6 +14,21 @@ abstract final class DanmakuOptions {
   static double danmakuFontScale = Pref.danmakuFontScale;
   static int danmakuFontWeight = Pref.danmakuFontWeight;
   static double danmakuShowArea = Pref.danmakuShowArea;
+
+  /// 弹幕显示行数；>0 时按行数换算显示区域，0 表示沿用 [danmakuShowArea]
+  static int danmakuRows = Pref.danmakuRows;
+
+  /// 弹幕画布高度（px），由 danmaku 视图在构建时回填，用于行数→区域换算
+  static double canvasHeight = 0;
+
+  /// 行数换算为面积比例：一行高 = 字号 × 行高倍数
+  static double areaFromRows(double fontSize) {
+    if (danmakuRows <= 0 || canvasHeight <= 0) return danmakuShowArea;
+    return (danmakuRows * fontSize * danmakuLineHeight / canvasHeight).clamp(
+      0.05,
+      1.0,
+    );
+  }
   static double danmakuDuration = Pref.danmakuDuration;
   static double danmakuStaticDuration = Pref.danmakuStaticDuration;
   static double danmakuStrokeWidth = Pref.danmakuStrokeWidth;
@@ -37,10 +52,11 @@ abstract final class DanmakuOptions {
       fontFamily = Pref.customDanmakuFontFamily;
     }
 
+    final fontSize = 15 * (notFullscreen ? danmakuFontScale : danmakuFontScaleFS);
     return DanmakuOption(
-      fontSize: 15 * (notFullscreen ? danmakuFontScale : danmakuFontScaleFS),
+      fontSize: fontSize,
       fontWeight: danmakuFontWeight,
-      area: danmakuShowArea,
+      area: areaFromRows(fontSize),
       duration: danmakuDuration / speed,
       staticDuration: danmakuStaticDuration / speed,
       hideBottom: blockTypes.contains(4),
@@ -61,6 +77,7 @@ abstract final class DanmakuOptions {
     return GStorage.setting.putAllNE({
       SettingBoxKey.danmakuBlockType: blockTypes.toList(),
       SettingBoxKey.danmakuShowArea: danmakuShowArea,
+      SettingBoxKey.danmakuRows: danmakuRows,
       SettingBoxKey.danmakuFontScale: danmakuFontScale,
       SettingBoxKey.danmakuFontScaleFS: danmakuFontScaleFS,
       SettingBoxKey.danmakuDuration: danmakuDuration,

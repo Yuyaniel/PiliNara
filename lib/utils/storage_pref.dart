@@ -1340,6 +1340,14 @@ abstract final class Pref {
   static double get danmakuShowArea =>
       _setting.get(SettingBoxKey.danmakuShowArea, defaultValue: 0.5);
 
+  /// 弹幕显示行数（0 表示沿用旧的面积比例）
+  static int get danmakuRows =>
+      _setting.get(SettingBoxKey.danmakuRows, defaultValue: 4);
+
+  /// 动态页点头像是否进入 UP 动态全屏页
+  static bool get upDynamicsFullScreen =>
+      _setting.get(SettingBoxKey.upDynamicsFullScreen, defaultValue: true);
+
   static double get danmakuOpacity =>
       _setting.get(SettingBoxKey.danmakuOpacity, defaultValue: 1.0);
 

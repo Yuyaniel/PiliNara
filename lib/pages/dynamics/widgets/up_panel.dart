@@ -179,8 +179,13 @@ class _UpPanelState extends State<UpPanel> {
       setState(() {});
       return;
     }
-    // 进入该 UP 的动态全屏页（页内可左右滑动切换其他 UP）
-    Get.to(() => UpDynamicsPage(initialMid: item.mid));
+    if (Pref.upDynamicsFullScreen) {
+      // 进入该 UP 的动态全屏页（页内可左右滑动切换其他 UP）
+      Get.to(() => UpDynamicsPage(initialMid: item.mid));
+    } else {
+      // 关闭全屏页时，只在动态页内就地筛选该 UP 的动态
+      controller.onSelectUp(item.mid);
+    }
     setState(() {});
   }
 

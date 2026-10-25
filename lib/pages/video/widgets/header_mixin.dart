@@ -139,8 +139,8 @@ mixin HeaderMixin<T extends StatefulWidget> on State<T> {
           setState(() {});
         }
 
-        void updateShowArea(double val) {
-          DanmakuOptions.danmakuShowArea = val.toPrecision(1);
+        void updateDanmakuRows(double val) {
+          DanmakuOptions.danmakuRows = val.round();
           setState(() {});
           setOptions();
         }
@@ -292,21 +292,19 @@ mixin HeaderMixin<T extends StatefulWidget> on State<T> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          '显示区域 ${(DanmakuOptions.danmakuShowArea * 100).toStringAsFixed(1)}%',
-                        ),
-                        resetBtn(theme, '50.0%', () => updateShowArea(0.5)),
+                        Text('弹幕行数 ${DanmakuOptions.danmakuRows} 行'),
+                        resetBtn(theme, '4 行', () => updateDanmakuRows(4)),
                       ],
                     ),
                     Padding(
                       padding: sliderPadding,
                       child: Slider(
-                        min: 0.1,
-                        max: 1,
-                        value: DanmakuOptions.danmakuShowArea,
+                        min: 1,
+                        max: 10,
+                        value: DanmakuOptions.danmakuRows.toDouble(),
                         divisions: 9,
-                        label: '${DanmakuOptions.danmakuShowArea * 100}%',
-                        onChanged: updateShowArea,
+                        label: '${DanmakuOptions.danmakuRows} 行',
+                        onChanged: updateDanmakuRows,
                       ),
                     ),
                     Row(

@@ -76,12 +76,17 @@
 6. **构建并注入版本号**（不修改 `pubspec.yaml`）：
 
    ```powershell
-   $code = [int]([DateTimeOffset]::Now.ToUnixTimeSeconds() / 60)
+   $code = [int]([DateTimeOffset]::Now.ToUnixTimeSeconds() / 60)   # 分钟时间戳，单调唯一
+   $ts   = [int][DateTimeOffset]::Now.ToUnixTimeSeconds()
+   $hash = (git rev-parse --short HEAD)
+
    flutter build apk --release --target-platform android-arm64 `
      --build-name=2.1.6 --build-number=$code `
      --dart-define=pili.code=$code --dart-define=pili.name=2.1.6 `
-     --dart-define=pili.time=[int][DateTimeOffset]::Now.ToUnixTimeSeconds()
+     --dart-define=pili.hash=$hash --dart-define=pili.time=$ts
    ```
+
+   `--build-number` 会写进 APK 的 `versionCode`，`--dart-define` 让 App 内的「关于」页显示真实版本而不是 `SNAPSHOT+1`。
 
    产物：`build/app/outputs/flutter-apk/app-release.apk`
 

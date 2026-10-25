@@ -32,6 +32,7 @@ abstract final class SettingBoxKey {
       enableAutoExit = 'enableAutoExit',
       autoLikeOnProgress = 'autoLikeOnProgress',
       autoLikePercent = 'autoLikePercent',
+      playerTopControls = 'playerTopControls',
       enableOnlineTotal = 'enableOnlineTotal',
       enableDmCount = 'enableDmCount',
       superChatType = 'superChatType',

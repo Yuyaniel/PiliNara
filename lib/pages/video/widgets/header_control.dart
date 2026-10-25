@@ -36,6 +36,7 @@ import 'package:PiliPlus/pages/video/introduction/ugc/widgets/action_item.dart';
 import 'package:PiliPlus/pages/video/introduction/ugc/widgets/menu_row.dart';
 import 'package:PiliPlus/pages/video/widgets/header_mixin.dart';
 import 'package:PiliPlus/pages/video/widgets/player_info_panel.dart';
+import 'package:PiliPlus/pages/video/widgets/player_top_control_editor.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/models/data_source.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_repeat.dart';
@@ -118,6 +119,16 @@ mixin TimeBatteryMixin<T extends StatefulWidget> on State<T> {
     // 离开播放页时确保播放信息浮层不残留
     PlayerInfoOverlay.hide();
     super.dispose();
+  }
+
+  /// 打开全屏右上角控件的编辑面板
+  void _openTopControlEditor(BuildContext context) {
+    PlayerTopControls.show(
+      context,
+      onChanged: () {
+        if (mounted) setState(() {});
+      },
+    );
   }
 
   void startClock() {
@@ -906,6 +917,15 @@ class HeaderControlState extends State<HeaderControl>
                     leading: const Icon(Icons.info_outline, size: 20),
                     onTap: () => showPlayerInfo(context, player: player),
                   ),
+                ListTile(
+                  dense: true,
+                  title: const Text('控件编辑', style: titleStyle),
+                  leading: const Icon(Icons.tune, size: 20),
+                  onTap: () {
+                    Get.back();
+                    _openTopControlEditor(context);
+                  },
+                ),
                 ListTile(
                   dense: true,
                   onTap: () {
@@ -2172,6 +2192,7 @@ class HeaderControlState extends State<HeaderControl>
               mainAxisAlignment: .end,
               crossAxisAlignment: .start,
               children: [
+                if (PlayerTopControls.isEnabled(PlayerTopControls.like))
                 SizedBox(
                   width: btnWidth,
                   height: btnHeight,
@@ -2199,6 +2220,7 @@ class HeaderControlState extends State<HeaderControl>
                     ),
                   ),
                 ),
+                if (PlayerTopControls.isEnabled(PlayerTopControls.coin))
                 SizedBox(
                   width: btnWidth,
                   height: btnHeight,
@@ -2217,6 +2239,7 @@ class HeaderControlState extends State<HeaderControl>
                     ),
                   ),
                 ),
+                if (PlayerTopControls.isEnabled(PlayerTopControls.fav))
                 SizedBox(
                   width: btnWidth,
                   height: btnHeight,
@@ -2239,6 +2262,7 @@ class HeaderControlState extends State<HeaderControl>
                     ),
                   ),
                 ),
+                if (PlayerTopControls.isEnabled(PlayerTopControls.download))
                 SizedBox(
                   width: btnWidth,
                   height: btnHeight,
@@ -2250,6 +2274,7 @@ class HeaderControlState extends State<HeaderControl>
                     semanticsLabel: '缓存',
                   ),
                 ),
+                if (PlayerTopControls.isEnabled(PlayerTopControls.info))
                 SizedBox(
                   width: btnWidth,
                   height: btnHeight,
@@ -2267,6 +2292,7 @@ class HeaderControlState extends State<HeaderControl>
                     semanticsLabel: '播放信息',
                   ),
                 ),
+                if (PlayerTopControls.isEnabled(PlayerTopControls.share))
                 SizedBox(
                   width: btnWidth,
                   height: btnHeight,

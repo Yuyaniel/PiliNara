@@ -1264,6 +1264,19 @@ abstract final class Pref {
   static int get autoLikePercent =>
       _setting.get(SettingBoxKey.autoLikePercent, defaultValue: 95);
 
+  /// 全屏右上角操作控件，默认全部显示
+  static List<String> get playerTopControls => _setting.get(
+    SettingBoxKey.playerTopControls,
+    defaultValue: const [
+      'like',
+      'coin',
+      'fav',
+      'download',
+      'info',
+      'share',
+    ],
+  );
+
   static int get customColor =>
       _setting.get(SettingBoxKey.customColor, defaultValue: 0);
 

@@ -1063,12 +1063,21 @@ class VideoDetailController extends GetxController
     queryVideoUrl(fromReset: true);
   }
 
+  /// [data] 是 late 字段，在部分调用路径上尚未初始化，不能直接读
+  int? get _knownDuration {
+    try {
+      return data.timeLength;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<LoadingState<PlayUrlModel>> _getVideoUrl(int quality) {
     return VideoHttp.videoUrl(
       cid: cid.value,
       bvid: bvid,
       qn: quality,
-      duration: data.timeLength,
+      duration: _knownDuration,
       epid: epId,
       seasonId: seasonId,
       tryLook: plPlayerController.tryLook,

@@ -36,7 +36,6 @@ import 'package:PiliPlus/pages/video/introduction/ugc/widgets/action_item.dart';
 import 'package:PiliPlus/pages/video/introduction/ugc/widgets/menu_row.dart';
 import 'package:PiliPlus/pages/video/widgets/header_mixin.dart';
 import 'package:PiliPlus/pages/video/widgets/player_info_panel.dart';
-import 'package:PiliPlus/pages/video/widgets/player_top_control_editor.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/models/data_source.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_repeat.dart';
@@ -119,33 +118,6 @@ mixin TimeBatteryMixin<T extends StatefulWidget> on State<T> {
     // 离开播放页时确保播放信息浮层不残留
     PlayerInfoOverlay.hide();
     super.dispose();
-  }
-
-  /// 控件原位编辑态
-  bool _editingControls = false;
-  Set<String> _draftControls = {};
-
-  void _enterControlEdit() {
-    setState(() {
-      _draftControls = PlayerTopControls.current();
-      _editingControls = true;
-    });
-  }
-
-  void _cancelControlEdit() {
-    setState(() => _editingControls = false);
-  }
-
-  Future<void> _saveControlEdit() async {
-    await PlayerTopControls.save(_draftControls);
-    if (!mounted) return;
-    setState(() => _editingControls = false);
-  }
-
-  void _toggleControl(String id) {
-    setState(() {
-      if (!_draftControls.remove(id)) _draftControls.add(id);
-    });
   }
 
   void startClock() {
@@ -934,15 +906,6 @@ class HeaderControlState extends State<HeaderControl>
                     leading: const Icon(Icons.info_outline, size: 20),
                     onTap: () => showPlayerInfo(context, player: player),
                   ),
-                ListTile(
-                  dense: true,
-                  title: const Text('控件编辑', style: titleStyle),
-                  leading: const Icon(Icons.tune, size: 20),
-                  onTap: () {
-                    Get.back();
-                    _enterControlEdit();
-                  },
-                ),
                 ListTile(
                   dense: true,
                   onTap: () {
@@ -1954,88 +1917,6 @@ class HeaderControlState extends State<HeaderControl>
                 }),
               ),
             ),
-          if (!isFileSource)
-            Positioned(
-              left: 0,
-              bottom: -28,
-              child: Obx(() {
-                final owner = introController.videoDetail.value.owner;
-                if (owner == null) return const SizedBox.shrink();
-                final ugc = introController is UgcIntroController
-                    ? introController as UgcIntroController
-                    : null;
-                final attr = ugc?.followStatus.value.attribute ?? 0;
-                final followed = attr != 0 && attr != 128;
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ClipOval(
-                      child: SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: owner.face?.isNotEmpty == true
-                            ? Image.network(
-                                owner.face!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, _, _) => const Icon(
-                                  Icons.person,
-                                  size: 14,
-                                  color: Colors.white70,
-                                ),
-                              )
-                            : const Icon(
-                                Icons.person,
-                                size: 14,
-                                color: Colors.white70,
-                              ),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 120),
-                      child: Text(
-                        owner.name ?? '',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () {
-                        if (ugc != null && !followed) {
-                          ugc.actionRelationMod(context);
-                        }
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: followed
-                              ? Colors.white24
-                              : const Color(0xFFFE6699),
-                          borderRadius: const BorderRadius.all(
-                            Radius.circular(10),
-                          ),
-                        ),
-                        child: Text(
-                          followed ? '已关注' : '+ 关注',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              }),
-            ),
         ],
       );
     }
@@ -2064,6 +1945,22 @@ class HeaderControlState extends State<HeaderControl>
                         plPlayerController.onPopInvokedWithResult(false, null),
                   ),
                 ),
+                if (!plPlayerController.isDesktopPip &&
+                    (!isFullScreen || !isPortrait))
+                  SizedBox(
+                    width: btnWidth,
+                    height: btnHeight,
+                    child: IconButton(
+                      tooltip: '返回主页',
+                      style: btnStyle,
+                      icon: const Icon(
+                        FontAwesomeIcons.house,
+                        size: 15,
+                        color: Colors.white,
+                      ),
+                      onPressed: plPlayerController.onCloseAll,
+                    ),
+                  ),
               ],
             ),
             right: Row(
@@ -2270,50 +2167,11 @@ class HeaderControlState extends State<HeaderControl>
             ),
             title: title,
           ),
-          if (_editingControls)
-            Row(
-              mainAxisAlignment: .end,
-              crossAxisAlignment: .center,
-              children: [
-                for (final id in PlayerTopControls.meta.keys)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 6),
-                    child: PlayerTopControlChip(
-                      id: id,
-                      enabled: _draftControls.contains(id),
-                      onTap: () => _toggleControl(id),
-                    ),
-                  ),
-              ],
-            ),
-          if (_editingControls)
-            Row(
-              mainAxisAlignment: .end,
-              children: [
-                TextButton(
-                  onPressed: _cancelControlEdit,
-                  child: const Text(
-                    '取消',
-                    style: TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                FilledButton(
-                  onPressed: _saveControlEdit,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFFFE6699),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  child: const Text('完成编辑', style: TextStyle(fontSize: 12)),
-                ),
-              ],
-            ),
-          if (showFSActionItem && !_editingControls)
+          if (showFSActionItem)
             Row(
               mainAxisAlignment: .end,
               crossAxisAlignment: .start,
               children: [
-                if (PlayerTopControls.isEnabled(PlayerTopControls.like))
                 SizedBox(
                   width: btnWidth,
                   height: btnHeight,
@@ -2341,7 +2199,6 @@ class HeaderControlState extends State<HeaderControl>
                     ),
                   ),
                 ),
-                if (PlayerTopControls.isEnabled(PlayerTopControls.coin))
                 SizedBox(
                   width: btnWidth,
                   height: btnHeight,
@@ -2360,7 +2217,6 @@ class HeaderControlState extends State<HeaderControl>
                     ),
                   ),
                 ),
-                if (PlayerTopControls.isEnabled(PlayerTopControls.fav))
                 SizedBox(
                   width: btnWidth,
                   height: btnHeight,
@@ -2383,7 +2239,6 @@ class HeaderControlState extends State<HeaderControl>
                     ),
                   ),
                 ),
-                if (PlayerTopControls.isEnabled(PlayerTopControls.download))
                 SizedBox(
                   width: btnWidth,
                   height: btnHeight,
@@ -2395,7 +2250,6 @@ class HeaderControlState extends State<HeaderControl>
                     semanticsLabel: '缓存',
                   ),
                 ),
-                if (PlayerTopControls.isEnabled(PlayerTopControls.info))
                 SizedBox(
                   width: btnWidth,
                   height: btnHeight,
@@ -2413,7 +2267,6 @@ class HeaderControlState extends State<HeaderControl>
                     semanticsLabel: '播放信息',
                   ),
                 ),
-                if (PlayerTopControls.isEnabled(PlayerTopControls.share))
                 SizedBox(
                   width: btnWidth,
                   height: btnHeight,

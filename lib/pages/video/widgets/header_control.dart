@@ -115,6 +115,8 @@ mixin TimeBatteryMixin<T extends StatefulWidget> on State<T> {
   void dispose() {
     stopBatteryInfoListener();
     stopClock();
+    // 离开播放页时确保播放信息浮层不残留
+    PlayerInfoOverlay.hide();
     super.dispose();
   }
 
@@ -2260,7 +2262,7 @@ class HeaderControlState extends State<HeaderControl>
                         SmartDialog.showToast('播放器未就绪');
                         return;
                       }
-                      showPlayerInfoPanel(context, player: player);
+                      PlayerInfoOverlay.toggle(context, player: player);
                     },
                     semanticsLabel: '播放信息',
                   ),

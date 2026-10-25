@@ -3,82 +3,76 @@ import 'dart:async';
 import 'package:media_kit/media_kit.dart' show NativePlayer;
 import 'package:material_ui/material_ui.dart';
 
-/// 播放信息侧栏
+/// 播放信息浮层
 ///
-/// 数据取自媒体引擎属性：
-/// - `video-params`：分辨率 / 色彩矩阵
-/// - `video-track`：编码 / 帧率
-/// - `video-bitrate` / `demuxer-cache-speed`：实时码率与下载速度（每秒刷新）
-Future<void> showPlayerInfoPanel(
-  BuildContext context, {
-  required NativePlayer player,
-}) {
-  return showGeneralDialog<void>(
-    context: context,
-    barrierDismissible: true,
-    barrierLabel: '播放信息',
-    barrierColor: const Color(0x33000000),
-    transitionDuration: const Duration(milliseconds: 220),
-    pageBuilder: (context, _, _) => Align(
-      alignment: Alignment.centerRight,
-      child: _PlayerInfoPanel(player: player),
-    ),
-    transitionBuilder: (context, animation, _, child) {
-      final curved = CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOutCubic,
-      );
-      return SlideTransition(
-        position: Tween(
-          begin: const Offset(1, 0),
-          end: Offset.zero,
-        ).animate(curved),
-        child: FadeTransition(opacity: curved, child: child),
-      );
-    },
-  );
-}
+/// 与对话框不同，它常驻在画面上（Overlay），只有再次点击控件
+/// 或点击浮层本身才会关闭，便于持续观察码率变化。
+abstract final class PlayerInfoOverlay {
+  static OverlayEntry? _entry;
 
-String _nonEmpty(String? value) {
-  if (value == null || value.isEmpty) return '-';
-  return value;
-}
+  static bool get isShowing => _entry != null;
 
-/// 实时视频码率：mpv 的 `video-bitrate` 单位是 bit/s
-String _formatBitrate(NativePlayer player) {
-  final raw = player.getProperty('video-bitrate');
-  final bps = double.tryParse(raw);
-  if (bps == null || bps <= 0) return '-';
-  if (bps >= 1000 * 1000) {
-    return '${(bps / 1000 / 1000).toStringAsFixed(2)} Mbps';
+  static void toggle(BuildContext context, {required NativePlayer player}) {
+    if (_entry != null) {
+      hide();
+      return;
+    }
+    final overlay = Overlay.of(context, rootOverlay: true);
+    final entry = OverlayEntry(
+      builder: (context) => _PlayerInfoLayer(
+        player: player,
+        onTap: hide,
+      ),
+    );
+    _entry = entry;
+    overlay.insert(entry);
   }
-  return '${(bps / 1000).toStringAsFixed(0)} kbps';
+
+  static void hide() {
+    _entry?.remove();
+    _entry = null;
+  }
 }
 
-/// 已缓存的时长（秒）
-String _formatCacheDuration(NativePlayer player) {
-  final raw = player.getProperty('demuxer-cache-duration');
-  final seconds = double.tryParse(raw);
-  if (seconds == null || seconds <= 0) return '-';
-  return '${seconds.toStringAsFixed(1)} s';
+class _PlayerInfoLayer extends StatelessWidget {
+  const _PlayerInfoLayer({required this.player, required this.onTap});
+
+  final NativePlayer player;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: GestureDetector(
+            onTap: onTap,
+            child: _PlayerInfoBox(player: player),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _PlayerInfoPanel extends StatefulWidget {
-  const _PlayerInfoPanel({required this.player});
+class _PlayerInfoBox extends StatefulWidget {
+  const _PlayerInfoBox({required this.player});
 
   final NativePlayer player;
 
   @override
-  State<_PlayerInfoPanel> createState() => _PlayerInfoPanelState();
+  State<_PlayerInfoBox> createState() => _PlayerInfoBoxState();
 }
 
-class _PlayerInfoPanelState extends State<_PlayerInfoPanel> {
+class _PlayerInfoBoxState extends State<_PlayerInfoBox> {
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    // 码率与下载速度是实时值，每秒刷新
+    // 码率是实时值，每秒刷新
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() {});
     });
@@ -92,7 +86,8 @@ class _PlayerInfoPanelState extends State<_PlayerInfoPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final state = widget.player.state;
+    final player = widget.player;
+    final state = player.state;
     final params = state.videoParams;
     final video = state.track.video;
 
@@ -100,75 +95,60 @@ class _PlayerInfoPanelState extends State<_PlayerInfoPanel> {
     final height = params.h ?? video.h;
     final fps = video.fps;
 
-    final rows = <(String, String)>[
-      ('编码', _nonEmpty(video.codec)),
-      (
-        '分辨率',
-        width != null && height != null && width > 0 && height > 0
-            ? '${width}x$height'
-            : '-',
-      ),
-      ('帧率', fps == null ? '-' : fps.toStringAsFixed(1)),
-      ('色彩矩阵', _nonEmpty(params.colormatrix)),
-      ('视频码率', _formatBitrate(widget.player)),
-      ('缓存时长', _formatCacheDuration(widget.player)),
+    final lines = <String>[
+      '编码: ${_nonEmpty(video.codec)}',
+      if (width != null && height != null && width > 0 && height > 0)
+        '分辨率: ${width}x$height'
+      else
+        '分辨率: -',
+      '帧率: ${fps == null ? '-' : fps.toStringAsFixed(1)}',
+      '色彩矩阵: ${_nonEmpty(params.colormatrix)}',
+      '比特率: ${_formatBitrate(player)}',
     ];
 
-    return Material(
-      color: Colors.black.withValues(alpha: 0.82),
-      child: SizedBox(
-        width: 216,
-        height: MediaQuery.sizeOf(context).height,
-        child: SafeArea(
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
-                  child: Text(
-                    '播放信息',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.55),
+        borderRadius: const BorderRadius.all(Radius.circular(8)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final line in lines)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 1),
+              child: Text(
+                line,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  height: 1.4,
+                  shadows: [
+                    Shadow(blurRadius: 2, color: Colors.black54),
+                  ],
                 ),
-                for (final (label, value) in rows)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 6,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          label,
-                          style: const TextStyle(
-                            color: Colors.white60,
-                            fontSize: 11,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        SelectableText(
-                          value,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
+              ),
             ),
-          ),
-        ),
+        ],
       ),
     );
   }
+}
+
+String _nonEmpty(String? value) {
+  if (value == null || value.isEmpty) return '-';
+  return value;
+}
+
+/// 实时视频码率，mpv 的 `video-bitrate` 单位为 bit/s
+String _formatBitrate(NativePlayer player) {
+  final raw = player.getProperty('video-bitrate');
+  final bps = double.tryParse(raw);
+  if (bps == null || bps <= 0) return '-';
+  if (bps >= 1000 * 1000) {
+    return '${(bps / 1000 / 1000).toStringAsFixed(2)} Mbps';
+  }
+  return '${(bps / 1000).toStringAsFixed(0)} kbps';
 }

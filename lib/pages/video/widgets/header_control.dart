@@ -35,6 +35,7 @@ import 'package:PiliPlus/pages/video/introduction/ugc/controller.dart';
 import 'package:PiliPlus/pages/video/introduction/ugc/widgets/action_item.dart';
 import 'package:PiliPlus/pages/video/introduction/ugc/widgets/menu_row.dart';
 import 'package:PiliPlus/pages/video/widgets/header_mixin.dart';
+import 'package:PiliPlus/pages/video/widgets/player_info_panel.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/models/data_source.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_repeat.dart';
@@ -2245,6 +2246,23 @@ class HeaderControlState extends State<HeaderControl>
                     onTap: () => videoDetailCtr.onDownload(context),
                     text: '缓存',
                     semanticsLabel: '缓存',
+                  ),
+                ),
+                SizedBox(
+                  width: btnWidth,
+                  height: btnHeight,
+                  child: ActionItem(
+                    expand: false,
+                    icon: const Icon(Icons.info_outline, color: Colors.white),
+                    onTap: () {
+                      final player = plPlayerController.videoPlayerController;
+                      if (player == null) {
+                        SmartDialog.showToast('播放器未就绪');
+                        return;
+                      }
+                      showPlayerInfoPanel(context, player: player);
+                    },
+                    semanticsLabel: '播放信息',
                   ),
                 ),
                 SizedBox(

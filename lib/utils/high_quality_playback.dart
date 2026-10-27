@@ -47,6 +47,18 @@ abstract final class HighQualityPlayback {
   /// 远端失败后的冷却截止时间，避免每次起播都等超时
   static DateTime? _cooldownUntil;
 
+  /// 本次会话手动解锁的 cid（按需解锁：只有用户手动点「解锁高画质」才请求）
+  static int? _unlockedCid;
+
+  /// 该 cid 是否已被手动解锁
+  static bool isUnlocked(int? cid) => cid != null && cid == _unlockedCid;
+
+  /// 标记该 cid 走高画质（下次 playurl 请求时生效）
+  static void unlock(int? cid) => _unlockedCid = cid;
+
+  /// 打开视频是否应该自动请求远端：仅当用户开启「起播自动解锁」
+  static bool get autoOnStartup => Pref.highQualityPlaybackOnStartup;
+
   static bool get enabled =>
       Pref.highQualityPlayback &&
       Pref.highQualityPlaybackServer.isNotEmpty &&

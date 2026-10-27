@@ -322,7 +322,8 @@ class PlDanmakuController {
   }
 
   void _storeDanmaku(List<DanmakuElem> elems) {
-    final filters = _plPlayerController.filters;
+    // 实时读取屏蔽规则：控制器上的 filters 是 late 字段，改规则后不会自动更新
+    final filters = Pref.danmakuFilterRule;
     final shouldFilter = filters.count != 0;
     final danmakuWeight = DanmakuOptions.danmakuWeight;
     final enlarge = Pref.danmakuEnlarge;

@@ -48,6 +48,13 @@ List<SettingsModel> get videoSettings => [
     setKey: SettingBoxKey.highQualityPlayback,
     defaultVal: false,
   ),
+  const SwitchModel(
+    title: '打开视频自动解锁高画质',
+    subtitle: '关闭时默认播 1080P，起播更快；需要高画质时在画质菜单里手动点「解锁高画质」',
+    leading: Icon(Icons.bolt_outlined),
+    setKey: SettingBoxKey.highQualityPlaybackOnStartup,
+    defaultVal: false,
+  ),
   NormalModel(
     title: '高画质服务地址',
     leading: const Icon(Icons.dns_outlined),

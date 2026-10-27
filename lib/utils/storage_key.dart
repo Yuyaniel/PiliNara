@@ -28,6 +28,7 @@ abstract final class SettingBoxKey {
       highQualityPlaybackServer = 'highQualityPlaybackServer',
       highQualityPlaybackQuality = 'highQualityPlaybackQuality',
       highQualityPlaybackIgnoreShort = 'highQualityPlaybackIgnoreShort',
+      highQualityPlaybackOnStartup = 'highQualityPlaybackOnStartup',
       enableAutoEnter = 'enableAutoEnter',
       enableAutoExit = 'enableAutoExit',
       autoLikeOnProgress = 'autoLikeOnProgress',

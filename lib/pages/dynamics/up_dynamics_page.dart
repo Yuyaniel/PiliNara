@@ -21,8 +21,10 @@ class UpDynamicsPage extends StatelessWidget {
     controller.currentMid = initialMid;
     controller.markUpRead(initialMid);
 
+    // 用不透明底色兜底：渐变背景关闭时 GradientBackground 只返回 child，
+    // 若 Scaffold 透明会透出下层页面（平板布局下会看到首页内容）
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: ColorScheme.of(context).surface,
       body: GradientBackground(
         child: SafeArea(
         child: Column(

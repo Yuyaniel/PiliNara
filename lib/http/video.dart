@@ -307,7 +307,11 @@ abstract final class VideoHttp {
     }
 
     // 高画质播放（第三方服务代请求），失败时回退到正常请求
-    if (videoType == .ugc && HighQualityPlayback.enabled) {
+    // 默认不请求（起播更快），只有开启「起播自动解锁」或本条视频被手动解锁时才走远端
+    if (videoType == .ugc &&
+        HighQualityPlayback.enabled &&
+        (HighQualityPlayback.autoOnStartup ||
+            HighQualityPlayback.isUnlocked(cid))) {
       final remote = await HighQualityPlayback.request(
         avid: avid,
         bvid: bvid,

@@ -1258,6 +1258,12 @@ abstract final class Pref {
     defaultValue: false,
   );
 
+  /// 打开视频是否自动向高画质服务请求解锁；关闭则只在手动触发时请求，起播更快
+  static bool get highQualityPlaybackOnStartup => _setting.get(
+    SettingBoxKey.highQualityPlaybackOnStartup,
+    defaultValue: false,
+  );
+
   static bool get autoLikeOnProgress =>
       _setting.get(SettingBoxKey.autoLikeOnProgress, defaultValue: false);
 

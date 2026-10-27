@@ -20,6 +20,7 @@ import 'package:PiliPlus/models/common/super_resolution_type.dart';
 import 'package:PiliPlus/models/common/video/audio_quality.dart';
 import 'package:PiliPlus/models/common/video/video_decode_type.dart';
 import 'package:PiliPlus/models/common/video/video_quality.dart';
+import 'package:PiliPlus/utils/high_quality_playback.dart';
 import 'package:PiliPlus/models/video/play/url.dart';
 import 'package:PiliPlus/models_new/video/video_play_info/subtitle.dart';
 import 'package:PiliPlus/pages/common/common_intro_controller.dart';
@@ -1080,6 +1081,37 @@ class HeaderControlState extends State<HeaderControl>
                     ),
                   ),
                 ),
+                if (HighQualityPlayback.enabled &&
+                    !HighQualityPlayback.isUnlocked(videoDetailCtr.cid.value))
+                  SliverToBoxAdapter(
+                    child: ListTile(
+                      dense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                      ),
+                      leading: Icon(
+                        Icons.lock_open_outlined,
+                        color: theme.colorScheme.primary,
+                      ),
+                      title: Text(
+                        '解锁高画质（第三方服务）',
+                        style: TextStyle(color: theme.colorScheme.primary),
+                      ),
+                      subtitle: Text(
+                        '默认按原画质起播；点这里才向服务请求本条视频的更高画质',
+                        style: subTitleStyle,
+                      ),
+                      onTap: () async {
+                        final cid = videoDetailCtr.cid.value;
+                        Get.back();
+                        HighQualityPlayback.unlock(cid);
+                        SmartDialog.showToast('正在解锁高画质…');
+                        videoDetailCtr.plPlayerController.cacheVideoQa =
+                            Pref.highQualityPlaybackQuality;
+                        await videoDetailCtr.queryVideoUrl();
+                      },
+                    ),
+                  ),
                 SliverList.builder(
                   itemCount: videoFormat.length,
                   itemBuilder: (context, index) {

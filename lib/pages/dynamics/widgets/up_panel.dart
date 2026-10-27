@@ -181,7 +181,16 @@ class _UpPanelState extends State<UpPanel> {
     }
     if (Pref.upDynamicsFullScreen) {
       // 进入该 UP 的动态全屏页（页内可左右滑动切换其他 UP）
-      Get.to(() => UpDynamicsPage(initialMid: item.mid));
+      // 用零时长的不透明路由：平板宽屏下沿用用户设置的转场（尺寸/滑入）时，
+      // 过渡期间会露出下层路由内容
+      Navigator.of(context).push(
+        PageRouteBuilder<void>(
+          opaque: true,
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+          pageBuilder: (_, _, _) => UpDynamicsPage(initialMid: item.mid),
+        ),
+      );
     } else {
       // 关闭全屏页时，只在动态页内就地筛选该 UP 的动态
       controller.onSelectUp(item.mid);

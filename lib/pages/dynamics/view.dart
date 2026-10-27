@@ -1,6 +1,5 @@
 import 'package:PiliPlus/common/widgets/scroll_physics.dart' show tabBarView;
 import 'package:PiliPlus/http/loading_state.dart';
-import 'package:PiliPlus/models/common/dynamic/dynamics_type.dart';
 import 'package:PiliPlus/models/common/dynamic/up_panel_position.dart';
 import 'package:PiliPlus/models/dynamics/up.dart';
 import 'package:PiliPlus/pages/common/common_page.dart';
@@ -126,7 +125,7 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
 
     Widget child = tabBarView(
       controller: _dynamicsController.tabController,
-      children: DynamicsTabType.values
+      children: _dynamicsController.visibleTabs
           .map((e) => DynamicsTabPage(dynamicsType: e))
           .toList(),
     );
@@ -189,7 +188,7 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
                     TabBarTheme.of(context).labelStyle
                         ?.copyWith(fontSize: 13) ??
                     const TextStyle(fontSize: 13),
-                tabs: DynamicsTabType.values
+                tabs: _dynamicsController.visibleTabs
                     .map((e) => Tab(text: e.label))
                     .toList(),
                 onTap: (index) {

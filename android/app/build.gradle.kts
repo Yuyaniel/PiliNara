@@ -37,6 +37,19 @@ android {
 
     packagingOptions.jniLibs.useLegacyPackaging = true
 
+    // 只打包 arm64 的 native 库。
+    // media_kit 的预编译 jar 会把 x86_64 / armeabi-v7a 两份 libmpv 一并带进来
+    // （约 13MB），而 Flutter 的 --target-platform 只过滤它自己产出的 .so，
+    // 管不到 jar 里的 native 库。
+    packaging {
+        jniLibs {
+            excludes += listOf(
+                "lib/x86_64/**",
+                "lib/armeabi-v7a/**",
+            )
+        }
+    }
+
     val keyProperties = Properties().also {
         val properties = rootProject.file("key.properties")
         if (properties.exists())

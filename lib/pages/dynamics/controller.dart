@@ -20,6 +20,11 @@ class DynamicsController
     with GetSingleTickerProviderStateMixin, AccountMixin {
   late final TabController tabController;
 
+  /// 本次会话的标签列表：只在控制器存活期间确定一次。
+  /// 这样 TabController.length 与 TabBar / TabBarView 的项数永远一致，
+  /// 运行中切换「隐藏番剧/专栏」不会造成长度不匹配，改动在重启后生效。
+  late final List<DynamicsTabType> visibleTabs = Pref.visibleDynamicsTabs;
+
   final Set<int> tempBannedList = <int>{};
 
   String? _offset;
@@ -38,7 +43,7 @@ class DynamicsController
   DynamicsTabController? get controller {
     try {
       return Get.find<DynamicsTabController>(
-        tag: DynamicsTabType.values[tabController.index].name,
+        tag: visibleTabs[tabController.index].name,
       );
     } catch (_) {
       return null;
@@ -48,16 +53,24 @@ class DynamicsController
   @override
   void onInit() {
     super.onInit();
+    final defaultIndex = visibleTabs.indexOf(Pref.defaultDynamicType);
     tabController = TabController(
       vsync: this,
-      length: DynamicsTabType.values.length,
-      initialIndex: Pref.defaultDynamicTypeIndex,
+      length: visibleTabs.length,
+      // 默认标签可能被隐藏，这里换成可见列表里的下标
+      initialIndex: defaultIndex < 0 ? 0 : defaultIndex,
     );
     queryData();
   }
 
   void _jumpToTab(int mid) {
-    tabController.index = mid == -1 ? 0 : 4;
+    if (mid == -1) {
+      tabController.index = 0;
+      return;
+    }
+    // UP 标签的位置随「隐藏番剧/专栏」变化，不能写死索引
+    final upIndex = visibleTabs.indexOf(DynamicsTabType.up);
+    tabController.index = upIndex < 0 ? 0 : upIndex;
   }
 
   void onSelectUp(int mid) {

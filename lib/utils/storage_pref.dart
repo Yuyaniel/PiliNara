@@ -546,8 +546,27 @@ abstract final class Pref {
   static String get systemProxyPort =>
       _setting.get(SettingBoxKey.systemProxyPort, defaultValue: '');
 
-  static DynamicsTabType get defaultDynamicType =>
-      DynamicsTabType.values[defaultDynamicTypeIndex];
+  /// 动态页隐藏「番剧」「专栏」两个标签
+  static bool get hideDynamicsTabs =>
+      _setting.get(SettingBoxKey.hideDynamicsTabs, defaultValue: false);
+
+  /// 动态页当前应显示的标签（受「隐藏番剧/专栏」影响）
+  static List<DynamicsTabType> get visibleDynamicsTabs => hideDynamicsTabs
+      ? const [
+          DynamicsTabType.all,
+          DynamicsTabType.video,
+          DynamicsTabType.up,
+        ]
+      : DynamicsTabType.values;
+
+  static DynamicsTabType get defaultDynamicType {
+    final index = defaultDynamicTypeIndex;
+    final type = index >= 0 && index < DynamicsTabType.values.length
+        ? DynamicsTabType.values[index]
+        : DynamicsTabType.all;
+    // 默认标签可能被「隐藏番剧/专栏」隐藏掉，回退到「全部」
+    return visibleDynamicsTabs.contains(type) ? type : DynamicsTabType.all;
+  }
 
   static int get defaultDynamicTypeIndex => _setting.get(
     SettingBoxKey.defaultDynamicType,

@@ -43,6 +43,14 @@ List<SettingsModel> get dynamicsSettings => [
     onChanged: (val) => ItemModulesModel.showDynDispute = val,
   ),
   const SwitchModel(
+    title: '隐藏「番剧」「专栏」标签',
+    subtitle: '动态页顶栏只保留 全部 / 投稿 / UP；需重进动态页或重启后生效',
+    leading: Icon(Icons.visibility_off_outlined),
+    setKey: SettingBoxKey.hideDynamicsTabs,
+    defaultVal: false,
+    needReboot: true,
+  ),
+  const SwitchModel(
     title: '动态/专栏详情页展示底部操作栏',
     leading: Icon(Icons.more_horiz),
     setKey: SettingBoxKey.showDynActionBar,
@@ -52,7 +60,7 @@ List<SettingsModel> get dynamicsSettings => [
     title: '动态展示',
     leading: const Icon(Icons.dynamic_feed_rounded),
     value: () => Pref.defaultDynamicType,
-    items: DynamicsTabType.values.take(4),
+    items: Pref.visibleDynamicsTabs.where((e) => e != DynamicsTabType.up),
     onSelected: (value, setState) => GStorage.setting
         .put(SettingBoxKey.defaultDynamicType, value.index)
         .whenComplete(setState),

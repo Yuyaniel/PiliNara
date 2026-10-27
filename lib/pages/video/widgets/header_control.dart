@@ -1109,6 +1109,17 @@ class HeaderControlState extends State<HeaderControl>
                         videoDetailCtr.plPlayerController.cacheVideoQa =
                             Pref.highQualityPlaybackQuality;
                         await videoDetailCtr.queryVideoUrl();
+                        // unlock() 会清空 lastStatus，据此判断本次是否真的请求成功
+                        final status = HighQualityPlayback.lastStatus;
+                        if (status != null && status.startsWith('成功')) {
+                          SmartDialog.showToast('已解锁：$status');
+                        } else {
+                          // 失败时撤销标记，避免这条视频每次起播都白等一次远端
+                          HighQualityPlayback.clearUnlock();
+                          SmartDialog.showToast(
+                            status ?? '解锁未执行，请检查服务地址与账号',
+                          );
+                        }
                       },
                     ),
                   ),

@@ -417,6 +417,7 @@ class VideoDetailController extends GetxController
       defaultST = Duration.zero;
     }
     data = PlayUrlModel(timeLength: entry.totalTimeMilli);
+    _dataCid = cid.value;
     _setVideoHeight();
   }
 
@@ -1063,9 +1064,14 @@ class VideoDetailController extends GetxController
     queryVideoUrl(fromReset: true);
   }
 
-  /// [data] 是 late 字段，在部分调用路径上尚未初始化，不能直接读
+  /// [data] 对应的 cid，用于判断 data 是否属于当前这一集
+  int? _dataCid;
+
+  /// [data] 是 late 字段，且切集时不会清空，直接读可能拿到上一集的时长，
+  /// 会让「短流保护」误判成试看片段，因此只在 cid 匹配时返回。
   int? get _knownDuration {
     try {
+      if (_dataCid != cid.value) return null;
       return data.timeLength;
     } catch (_) {
       return null;
@@ -1088,11 +1094,15 @@ class VideoDetailController extends GetxController
   }
 
   Future<void> _supplementVideoQualities() async {
-    final quality = data.missingVideoQualityBelowHighest;
+    // 本方法已改为后台执行：await 期间可能已切分P/换视频，
+    // 因此必须锁定当前这集的 data，避免把上一集的流并进新视频（或对新视频空 dash 解引用）
+    final current = data;
+    final quality = current.missingVideoQualityBelowHighest;
     if (quality == -1) return;
     final result = await _getVideoUrl(quality);
+    if (!identical(current, data)) return; // 期间已切换数据源，丢弃过期结果
     if (result case Success(:final response)) {
-      data.dash!.video!.merge(response.dash?.video);
+      current.dash?.video?.merge(response.dash?.video);
     }
   }
 
@@ -1170,6 +1180,7 @@ class VideoDetailController extends GetxController
 
     if (result case Success(:final response)) {
       data = response;
+      _dataCid = cid.value;
       // 补画质不阻塞首帧：后台补齐后直接 merge 进 data.dash
       if (data.dash != null) {
         unawaited(_supplementVideoQualities().catchError((Object e, StackTrace s) {

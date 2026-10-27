@@ -54,7 +54,15 @@ abstract final class HighQualityPlayback {
   static bool isUnlocked(int? cid) => cid != null && cid == _unlockedCid;
 
   /// 标记该 cid 走高画质（下次 playurl 请求时生效）
-  static void unlock(int? cid) => _unlockedCid = cid;
+  ///
+  /// 同时清空 [lastStatus]，调用方可用「lastStatus 是否被写入」判断本次是否真的发了请求。
+  static void unlock(int? cid) {
+    _unlockedCid = cid;
+    lastStatus = null;
+  }
+
+  /// 解锁失败时撤销标记，避免同一视频每次起播都重试一次远端
+  static void clearUnlock() => _unlockedCid = null;
 
   /// 打开视频是否自动请求远端（用户开关，默认关：起播不被远端拖慢）
   static bool get autoOnStartup => Pref.highQualityPlaybackOnStartup;
@@ -266,8 +274,8 @@ abstract final class HighQualityPlayback {
   static String describeAccount() {
     final userInfo = Pref.userInfoCache;
     if (userInfo == null) return '未获取到账号信息';
-    final mid = userInfo.mid ?? _midFromCookie('');
-    return 'mid=$mid　等级=${userInfo.levelInfo?.currentLevel ?? '-'}'
+    final mid = userInfo.mid;
+    return 'mid=${mid ?? '-'}　等级=${userInfo.levelInfo?.currentLevel ?? '-'}'
         '　硬币=${userInfo.money ?? '-'}'
         '　大会员=${(userInfo.vipStatus ?? 0) > 0 ? '是' : '否'}';
   }

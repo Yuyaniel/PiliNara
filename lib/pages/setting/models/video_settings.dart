@@ -50,7 +50,7 @@ List<SettingsModel> get videoSettings => [
   ),
   const SwitchModel(
     title: '打开视频自动解锁高画质',
-    subtitle: '关闭时默认按 1080P 起播，起播更快；需要高画质时在画质菜单里手动点「解锁高画质」',
+    subtitle: '需先开启上方「高画质播放」。关闭时默认按 1080P 起播、起播更快；需要高画质时在画质菜单里手动点「解锁高画质」',
     leading: Icon(Icons.bolt_outlined),
     setKey: SettingBoxKey.highQualityPlaybackOnStartup,
     defaultVal: false,

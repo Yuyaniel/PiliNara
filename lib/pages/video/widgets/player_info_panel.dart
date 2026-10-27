@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:media_kit/media_kit.dart' show NativePlayer;
+import 'package:media_kit/media_kit.dart' show NativePlayer, PlayerState;
 import 'package:material_ui/material_ui.dart';
 
 /// 播放信息浮层
@@ -29,8 +29,11 @@ abstract final class PlayerInfoOverlay {
   }
 
   static void hide() {
-    _entry?.remove();
+    final entry = _entry;
+    if (entry == null) return;
     _entry = null;
+    // entry 可能已随 overlay 一起被移除，重复 remove 会触发断言
+    if (entry.mounted) entry.remove();
   }
 }
 
@@ -87,7 +90,14 @@ class _PlayerInfoBoxState extends State<_PlayerInfoBox> {
   @override
   Widget build(BuildContext context) {
     final player = widget.player;
-    final state = player.state;
+    final PlayerState state;
+    try {
+      state = player.state;
+    } catch (_) {
+      // 播放器已释放（切画质重建播放器时可能出现），本帧先不渲染，
+      // 页面 dispose 时会调用 PlayerInfoOverlay.hide()
+      return const SizedBox.shrink();
+    }
     final params = state.videoParams;
     final video = state.track.video;
 
@@ -144,7 +154,13 @@ String _nonEmpty(String? value) {
 
 /// 实时视频码率，mpv 的 `video-bitrate` 单位为 bit/s
 String _formatBitrate(NativePlayer player) {
-  final raw = player.getProperty('video-bitrate');
+  final String raw;
+  try {
+    raw = player.getProperty('video-bitrate');
+  } catch (_) {
+    // 播放器已释放时读取原生属性会抛异常
+    return '-';
+  }
   final bps = double.tryParse(raw);
   if (bps == null || bps <= 0) return '-';
   if (bps >= 1000 * 1000) {

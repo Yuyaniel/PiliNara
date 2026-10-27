@@ -653,22 +653,38 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     _checkAutoLikeProgress(position);
   }
 
-  /// 播放进度达到设定百分比时自动点赞（同一视频只触发一次）
+  /// 播放进度达到设定百分比时自动点赞（同一视频成功一次即可，失败会重试）
   String? _autoLikeKey;
+  String? _autoLikePendingKey;
+  int _autoLikeAttemptAt = 0;
+  static const int _autoLikeRetryMs = 15000;
+
   void _checkAutoLikeProgress(Duration position) {
     if (!Pref.autoLikeOnProgress) return;
     final percent = Pref.autoLikePercent;
     if (percent <= 0) return;
     final intro = introController;
-    if (!intro.isLogin || intro.hasLike.value) return;
+    if (!intro.isLogin) return;
+    final key =
+        '${videoDetailController.bvid}_${videoDetailController.cid.value}';
+    if (intro.hasLike.value) {
+      // 已点赞（含手动点赞），标记完成
+      _autoLikeKey = key;
+      return;
+    }
+    if (_autoLikeKey == key) return;
     final total = videoDetailController.plPlayerController.durationInMilliseconds;
     if (total <= 0) return;
     if (position.inMilliseconds * 100 < total * percent) return;
-    final key =
-        '${videoDetailController.bvid}_${videoDetailController.cid.value}';
-    if (_autoLikeKey == key) return;
-    _autoLikeKey = key;
-    // TripleMixin.actionLikeVideo 声明为 void，内部自行处理错误
+    // 请求在途时不重复触发；超过退避时间仍未变成已赞，说明上次失败，允许重试。
+    // （actionLikeVideo 在接口层声明为 void，拿不到返回值，只能靠 hasLike 判断结果）
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (_autoLikePendingKey == key &&
+        now - _autoLikeAttemptAt < _autoLikeRetryMs) {
+      return;
+    }
+    _autoLikePendingKey = key;
+    _autoLikeAttemptAt = now;
     intro.actionLikeVideo();
   }
 

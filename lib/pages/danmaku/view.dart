@@ -49,6 +49,8 @@ class _PlDanmakuState extends State<PlDanmaku> {
   @override
   void initState() {
     super.initState();
+    // 供设置面板等拿不到画布尺寸的调用点兜底
+    DanmakuOptions.canvasHeight = widget.size.height;
     if (kDebugMode) {
       debugPrint(
         '[PlDanmaku] init state=${identityHashCode(this)} cid=${widget.cid} '
@@ -84,12 +86,17 @@ class _PlDanmakuState extends State<PlDanmaku> {
   @override
   void didUpdateWidget(PlDanmaku oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.notFullscreen != widget.notFullscreen &&
-        !DanmakuOptions.sameFontScale) {
+    // 全屏切换 或 画布尺寸变化都要重算显示区域（行数依赖画布高度）。
+    // 否则设了 2 行会按旧高度继续显示 3 行，必须手动开关一次弹幕才恢复。
+    if ((oldWidget.notFullscreen != widget.notFullscreen &&
+            !DanmakuOptions.sameFontScale) ||
+        oldWidget.size != widget.size) {
+      DanmakuOptions.canvasHeight = widget.size.height;
       _controller?.updateOption(
         DanmakuOptions.get(
           notFullscreen: widget.notFullscreen,
           speed: playerController.playbackSpeed,
+          canvasHeight: widget.size.height,
         ),
       );
     }
@@ -235,11 +242,11 @@ class _PlDanmakuState extends State<PlDanmaku> {
 
   @override
   Widget build(BuildContext context) {
-    // 回填画布高度，供「弹幕行数 → 显示区域」换算
-    DanmakuOptions.canvasHeight = widget.size.height;
+    // 显式传入画布高度：行数换算不再依赖可变静态值，避免 build 期副作用与串档
     final option = DanmakuOptions.get(
       notFullscreen: widget.notFullscreen,
       speed: playerController.playbackSpeed,
+      canvasHeight: widget.size.height,
     );
     return Obx(
       () => AnimatedOpacity(

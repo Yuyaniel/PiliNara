@@ -48,13 +48,6 @@ List<SettingsModel> get dynamicsSettings => [
     setKey: SettingBoxKey.showDynActionBar,
     defaultVal: true,
   ),
-  const SwitchModel(
-    title: '点头像进入 UP 动态全屏页',
-    subtitle: '关闭后点头像只在动态页内筛选该 UP 的动态，不跳转新页面',
-    leading: Icon(Icons.open_in_full),
-    setKey: SettingBoxKey.upDynamicsFullScreen,
-    defaultVal: true,
-  ),
   PopupModel(
     title: '动态展示',
     leading: const Icon(Icons.dynamic_feed_rounded),

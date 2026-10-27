@@ -18,7 +18,7 @@ if (!isBuiltInKotlinEnabled) {
 }
 
 android {
-    namespace = "com.example.pilione"
+    namespace = "com.example.pilinara"
     compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
@@ -70,7 +70,7 @@ android {
                 resValue(
                     type = "string",
                     name = "app_name",
-                    value = "Pilione dev",
+                    value = "PiliNara dev",
                 )
             }
             proguardFiles(

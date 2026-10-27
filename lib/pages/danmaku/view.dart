@@ -84,16 +84,12 @@ class _PlDanmakuState extends State<PlDanmaku> {
   @override
   void didUpdateWidget(PlDanmaku oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 全屏切换 或 画布尺寸变化时都要重算区域（行数依赖画布高度）
-    if ((oldWidget.notFullscreen != widget.notFullscreen &&
-            !DanmakuOptions.sameFontScale) ||
-        oldWidget.size != widget.size) {
-      DanmakuOptions.canvasHeight = widget.size.height;
+    if (oldWidget.notFullscreen != widget.notFullscreen &&
+        !DanmakuOptions.sameFontScale) {
       _controller?.updateOption(
         DanmakuOptions.get(
           notFullscreen: widget.notFullscreen,
           speed: playerController.playbackSpeed,
-          canvasHeight: widget.size.height,
         ),
       );
     }
@@ -244,7 +240,6 @@ class _PlDanmakuState extends State<PlDanmaku> {
     final option = DanmakuOptions.get(
       notFullscreen: widget.notFullscreen,
       speed: playerController.playbackSpeed,
-      canvasHeight: widget.size.height,
     );
     return Obx(
       () => AnimatedOpacity(

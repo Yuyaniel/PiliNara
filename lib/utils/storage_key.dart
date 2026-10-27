@@ -291,7 +291,6 @@ abstract final class SettingBoxKey {
       danmakuBlockType = 'danmakuBlockType',
       danmakuShowArea = 'danmakuShowArea',
       danmakuRows = 'danmakuRows',
-      upDynamicsFullScreen = 'upDynamicsFullScreen',
       danmakuOpacity = 'danmakuOpacity',
       danmakuFontScale = 'danmakuFontScale',
       danmakuFontScaleFS = 'danmakuFontScaleFS',

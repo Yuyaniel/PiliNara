@@ -55,18 +55,6 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
   Widget upPanelPart(ColorScheme colorScheme) {
     final isTop = upPanelPosition == .top;
     final needBg = upPanelPosition.index > 2;
-    // 依赖 currentMid：滑动切换 UP 时同步头像高亮
-    return Obx(() {
-      _dynamicsController.currentMid;
-      return _buildUpPanelPart(colorScheme, isTop, needBg);
-    });
-  }
-
-  Widget _buildUpPanelPart(
-    ColorScheme colorScheme,
-    bool isTop,
-    bool needBg,
-  ) {
     return Material(
       type: needBg ? .canvas : .transparency,
       color: needBg ? colorScheme.surface : null,
@@ -136,15 +124,12 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
     Widget? leading;
     Widget actions;
 
-    final normalChild = tabBarView(
+    Widget child = tabBarView(
       controller: _dynamicsController.tabController,
       children: DynamicsTabType.values
           .map((e) => DynamicsTabPage(dynamicsType: e))
           .toList(),
     );
-
-    // UP 动态在独立全屏页展示，这里始终是普通 tab 内容
-    Widget child = normalChild;
 
     switch (upPanelPosition) {
       case .top:
@@ -208,10 +193,6 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
                     .map((e) => Tab(text: e.label))
                     .toList(),
                 onTap: (index) {
-                  // UP 模式下点任意 tab 先退出 UP 模式
-                  if (_dynamicsController.currentMid != -1) {
-                    _dynamicsController.exitUpMode();
-                  }
                   if (!_dynamicsController.tabController.indexIsChanging) {
                     if (Pref.enableCurrentPageRefresh) {
                       _dynamicsController.toTopAndRefresh();

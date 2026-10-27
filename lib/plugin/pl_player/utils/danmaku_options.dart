@@ -22,12 +22,9 @@ abstract final class DanmakuOptions {
   static double canvasHeight = 0;
 
   /// 行数换算为面积比例：一行高 = 字号 × 行高倍数
-  ///
-  /// [height] 显式传入当前画布高度；不传则用 [canvasHeight] 兜底。
-  static double areaFromRows(double fontSize, [double? height]) {
-    final canvas = (height != null && height > 0) ? height : canvasHeight;
-    if (danmakuRows <= 0 || canvas <= 0) return danmakuShowArea;
-    return (danmakuRows * fontSize * danmakuLineHeight / canvas).clamp(
+  static double areaFromRows(double fontSize) {
+    if (danmakuRows <= 0 || canvasHeight <= 0) return danmakuShowArea;
+    return (danmakuRows * fontSize * danmakuLineHeight / canvasHeight).clamp(
       0.05,
       1.0,
     );
@@ -45,7 +42,6 @@ abstract final class DanmakuOptions {
   static DanmakuOption get({
     required bool notFullscreen,
     double speed = 1.0,
-    double? canvasHeight,
   }) {
     String? fontFamily;
     if (!Pref.enableCustomDanmakuFont || Pref.danmakuFontSyncMode == DanmakuFontSyncMode.system) {
@@ -60,7 +56,7 @@ abstract final class DanmakuOptions {
     return DanmakuOption(
       fontSize: fontSize,
       fontWeight: danmakuFontWeight,
-      area: areaFromRows(fontSize, canvasHeight),
+      area: areaFromRows(fontSize),
       duration: danmakuDuration / speed,
       staticDuration: danmakuStaticDuration / speed,
       hideBottom: blockTypes.contains(4),

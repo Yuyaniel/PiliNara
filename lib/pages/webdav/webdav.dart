@@ -73,7 +73,7 @@ class WebDav {
   }
 
   String _getFileName() {
-    return 'pilione_settings_${DeviceUtils.platformName}.json';
+    return 'pilinara_settings_${DeviceUtils.platformName}.json';
   }
 
   /// 改名前的备份文件名，恢复时回退读取，避免升级后读不到既有备份

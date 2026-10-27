@@ -1,6 +1,6 @@
 <div align="center">
   <img width="180" src="assets/images/logo/logo.png">
-  <h1>Pilione</h1>
+  <h1>PiliNara</h1>
   <p>第三方哔哩哔哩客户端 · 自用修改版</p>
   <p>基于 <a href="https://github.com/bggRGjQaUbCoE/PiliPlus">PiliPlus</a> / <a href="https://github.com/Starfallan/PiliNara">PiliNara</a></p>
 </div>
@@ -22,6 +22,7 @@
 | 设置项 | 说明 |
 |---|---|
 | 高画质播放（实验性） | 总开关 |
+| 打开视频自动解锁高画质 | **默认关闭**。关闭时视频按 1080P 起播、**不向远端发任何请求**（起播更快）；需要高画质时在播放页画质菜单里手动点「解锁高画质」 |
 | 高画质服务地址 | 第三方服务地址，留空表示不启用 |
 | 高画质目标画质 | **上限语义**：返回的流会按上限裁剪，只保留不高于该档的档位（默认 1080P 60帧） |
 | 高画质请求状态 | 显示结果与失败原因，如「成功：最高 4K 超高清，共 6 档」；失败后进入冷却时会显示剩余秒数 |
@@ -29,6 +30,8 @@
 | 查看最近一次远端请求 | 可查看并复制全文，cookie 已按 `name=***` 打码；超过 8000 字符会截断并标注原长 |
 | 查看最近一次远端响应 | 同上，便于反馈问题 |
 | 不忽略过短的远端流（调试） | 默认关闭。远端流比本地短 5 秒以上会判定为试看片段并丢弃 |
+
+**按需解锁（默认）**：起播不请求远端，直接按 1080P 播放，**起播速度与原生一致**。播放页 → 画质菜单顶部会多出「解锁高画质（第三方服务）」，点了才向服务请求本条视频的更高画质；解锁按 `cid` 记忆，同一条视频后续切换画质不会重复请求。想让每条视频都自动解锁，再打开「打开视频自动解锁高画质」。
 
 **兜底**：远端请求失败、返回异常、流时长异常时一律回退到原生 `playurl`，不影响正常播放。失败后 **30 秒冷却**（期间不再请求，保证起播速度），可在「高画质请求状态」看到剩余时间。
 
@@ -59,34 +62,22 @@
   | 分辨率 / 色彩矩阵 | `video-params`（`w`/`h` / `colormatrix`） |
   | 比特率 | `video-bitrate`（单位 bit/s） |
 
-### 4. UP 动态全屏页
-
-- **进入**：动态页点击顶部任一头像 → 打开**独立全屏页**，只显示该 UP 的动态（无 tab 栏、无底部导航）
-- **标题栏**：`XX 的动态` + ✕ 关闭
-- 长动态支持展开（`onUnfold`，与动态 tab 页行为一致）
-- **切换**：页内左右滑动即可切换到其他 UP，标题实时更新
-- **已读**：切入某个 UP 时自动清除其头像红点（本地已读），与选中态保持同步
-- **返回**：✕ 或系统返回，回到动态页原状态
-- 实现要点：`currentMid`（`controller.dart`）是唯一选中态；头像行用 `GlobalKey` + `ensureVisible` 自动滚动跟随并显示底部箭头指示；每个 UP 的动态流独立分页与缓存（`widgets/up_feed_pager.dart`，页面入口 `up_dynamics_page.dart`）
-
----
-
-### 5. UP 动态全屏页的渐变背景
+### 4. 渐变背景组件化
 
 - 抽出共享组件 `lib/common/widgets/gradient_background.dart`（`GradientLayer` / `GradientBackground`），参数与主布局渐变一致
-- 主布局改为复用同一组件，UP 动态全屏页背景用同一层渐变，视觉与主界面统一
+- 主布局改为复用同一组件，避免渐变参数在两处漂移
 - 仍受「渐变背景」开关（`Pref.enableGradientBg`）控制
 
-### 6. 弹幕显示区改为按行数
+### 5. 弹幕显示区改为按行数
 
 - 弹幕设置里的「显示区域 %」滑块改为 **「弹幕行数」**（1~10 行，默认 4 行）
 - 内部按 `行数 × 字号 × 行高倍数 ÷ 画布高度` 换算成面积比例，再交给 `canvas_danmaku`
-- 画布高度在弹幕视图构建时回填，因此全屏/小窗/竖屏下行数都保持一致
+- 画布高度在弹幕视图构建时回填，并在窗口尺寸变化时重新应用，全屏/小窗/竖屏下行数保持一致
 
-### 7. 动态页全屏开关
+### 6. 动态页头像筛选（原版行为）
 
-- 设置 → 动态设置 → **「点头像进入 UP 动态全屏页」**（默认开）
-- 关闭后点头像只在动态页内筛选该 UP 的动态，不跳转新页面
+- 动态页点头像 → **就地筛选**该 UP 的动态（头像高亮），不跳转新页面，平板/宽屏下行为与上游完全一致
+- 本分支曾实现过的「UP 动态全屏页」因问题过多已**整体移除**，相关文件与设置项均已删除
 
 ## 本地构建（Windows）
 
@@ -105,10 +96,10 @@
 
 3. **依赖镜像**（国内网络）：`android/build.gradle.kts` 与 `android/settings.gradle.kts` 已加入阿里云 + 腾讯云镜像，替代不可达的 `maven.google.com` / `jitpack.io`；`gradle-wrapper.properties` 指向腾讯云镜像。
 4. **Kotlin 增量编译**：`android/gradle.properties` 中已关闭（`kotlin.incremental=false`）。工程与 `GRADLE_USER_HOME` 不在同一盘符时，增量缓存会因相对路径跨盘而报错。
-5. **签名**：在 `android/` 下新建 `key.properties`，并把 `pilione.jks` 放到 `android/app/`：
+5. **签名**：在 `android/` 下新建 `key.properties`，并把 `pilinara.jks` 放到 `android/app/`：
 
    ```properties
-   storeFile=pilione.jks
+   storeFile=pilinara.jks
    storePassword=<你的密码>
    keyAlias=<你的别名>
    keyPassword=<你的密码>

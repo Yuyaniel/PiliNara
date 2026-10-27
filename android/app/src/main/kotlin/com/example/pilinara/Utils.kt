@@ -1,4 +1,4 @@
-package com.example.pilione
+package com.example.pilinara
 
 import android.os.Build
 import android.os.Bundle

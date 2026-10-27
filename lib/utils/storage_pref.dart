@@ -1258,7 +1258,7 @@ abstract final class Pref {
     defaultValue: false,
   );
 
-  /// 打开视频是否自动向高画质服务请求解锁；关闭则只在手动触发时请求，起播更快
+  /// 打开视频是否自动向高画质服务请求解锁；关闭则默认 1080P 起播，只在手动触发时请求
   static bool get highQualityPlaybackOnStartup => _setting.get(
     SettingBoxKey.highQualityPlaybackOnStartup,
     defaultValue: false,
@@ -1349,10 +1349,6 @@ abstract final class Pref {
   /// 弹幕显示行数（0 表示沿用旧的面积比例）
   static int get danmakuRows =>
       _setting.get(SettingBoxKey.danmakuRows, defaultValue: 4);
-
-  /// 动态页点头像是否进入 UP 动态全屏页
-  static bool get upDynamicsFullScreen =>
-      _setting.get(SettingBoxKey.upDynamicsFullScreen, defaultValue: true);
 
   static double get danmakuOpacity =>
       _setting.get(SettingBoxKey.danmakuOpacity, defaultValue: 1.0);

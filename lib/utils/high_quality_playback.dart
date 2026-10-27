@@ -56,7 +56,7 @@ abstract final class HighQualityPlayback {
   /// 标记该 cid 走高画质（下次 playurl 请求时生效）
   static void unlock(int? cid) => _unlockedCid = cid;
 
-  /// 打开视频是否应该自动请求远端：仅当用户开启「起播自动解锁」
+  /// 打开视频是否自动请求远端（用户开关，默认关：起播不被远端拖慢）
   static bool get autoOnStartup => Pref.highQualityPlaybackOnStartup;
 
   static bool get enabled =>

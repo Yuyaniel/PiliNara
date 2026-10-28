@@ -67,10 +67,14 @@ abstract final class HighQualityPlayback {
   /// 打开视频是否自动请求远端（用户开关，默认关：起播不被远端拖慢）
   static bool get autoOnStartup => Pref.highQualityPlaybackOnStartup;
 
-  static bool get enabled =>
-      Pref.highQualityPlayback &&
-      Pref.highQualityPlaybackServer.isNotEmpty &&
-      !_inCooldown;
+  /// 起播后是否后台预解析高画质，并把结果并入画质菜单（默认开）
+  static bool get preloadOnOpen => Pref.highQualityPlaybackPreload;
+
+  /// 功能已开启且服务地址已配置（不包含冷却判断）
+  static bool get configured =>
+      Pref.highQualityPlayback && Pref.highQualityPlaybackServer.isNotEmpty;
+
+  static bool get enabled => configured && !_inCooldown;
 
   static bool get _inCooldown {
     final until = _cooldownUntil;

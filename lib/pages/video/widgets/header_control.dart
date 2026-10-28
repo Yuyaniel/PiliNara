@@ -416,7 +416,9 @@ class HeaderControlState extends State<HeaderControl>
   @override
   late final PlPlayerController plPlayerController = widget.controller;
   late final VideoDetailController videoDetailCtr = widget.videoDetailCtr;
-  late final PlayUrlModel videoInfo = videoDetailCtr.data;
+  // 用 getter 而非 late final 快照：后台预解析会把远端流并进 data.dash.video，
+  // 快照会导致画质菜单看不到新并入的档位
+  PlayUrlModel get videoInfo => videoDetailCtr.data;
   static const TextStyle subTitleStyle = TextStyle(fontSize: 12);
   static const TextStyle titleStyle = TextStyle(fontSize: 14);
 
@@ -1046,7 +1048,6 @@ class HeaderControlState extends State<HeaderControl>
     if (currentVideoQa == null) return;
 
     final List<FormatItem> videoFormat = videoInfo.supportFormats!;
-    final availableQa = videoInfo.dash!.video!.availableVideoQualities;
 
     showBottomSheet(
       (context, setState) {
@@ -1057,7 +1058,12 @@ class HeaderControlState extends State<HeaderControl>
             clipBehavior: Clip.hardEdge,
             color: theme.colorScheme.surface,
             borderRadius: const BorderRadius.all(Radius.circular(12)),
-            child: CustomScrollView(
+            // 订阅后台预解析状态：解析完成后档位即时变为可点，不必关掉菜单重开
+            child: Obx(() {
+              videoDetailCtr.highQualityTick.value;
+              final availableQa =
+                  videoInfo.dash!.video!.availableVideoQualities;
+              return CustomScrollView(
               slivers: [
                 SliverToBoxAdapter(
                   child: SizedBox(
@@ -1130,13 +1136,42 @@ class HeaderControlState extends State<HeaderControl>
                     final isCurr = currentVideoQa.code == item.quality;
                     return ListTile(
                       dense: true,
-                      onTap: () {
+                      onTap: () async {
                         if (isCurr) {
                           return;
                         }
-                        Get.back();
                         final int quality = item.quality!;
                         final newQa = VideoQuality.fromCode(quality);
+
+                        // 本地没有这一档：点了才向高画质服务请求，成功后切过去
+                        if (!availableQa.contains(quality)) {
+                          if (!HighQualityPlayback.configured) {
+                            SmartDialog.showToast(
+                              '标灰画质需要bilibili会员（已是会员？请关闭无痕模式）',
+                            );
+                            return;
+                          }
+                          if (!HighQualityPlayback.enabled) {
+                            SmartDialog.showToast(
+                              '高画质服务冷却中，${HighQualityPlayback.cooldownSecondsLeft} 秒后可重试',
+                            );
+                            return;
+                          }
+                          Get.back();
+                          SmartDialog.showLoading(msg: '正在解锁 ${newQa.desc}…');
+                          final ok = await videoDetailCtr
+                              .unlockQuality(quality)
+                              .catchError((_) => false);
+                          SmartDialog.dismiss();
+                          SmartDialog.showToast(
+                            ok
+                                ? '已解锁并切换到 ${newQa.desc}'
+                                : '解锁失败：${HighQualityPlayback.lastStatus ?? '未知原因'}',
+                          );
+                          return;
+                        }
+
+                        Get.back();
                         videoDetailCtr
                           ..plPlayerController.cacheVideoQa = newQa.code
                           ..currentVideoQa.value = newQa
@@ -1147,8 +1182,10 @@ class HeaderControlState extends State<HeaderControl>
                         // update
                         videoDetailCtr.persistVideoQa(quality);
                       },
-                      // 可能包含会员解锁画质
-                      enabled: availableQa.contains(item.quality),
+                      // 本地已有 → 直接切；本地没有但高画质服务可用 → 也放开点击，点时才请求
+                      enabled:
+                          availableQa.contains(item.quality) ||
+                          HighQualityPlayback.configured,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 20,
                       ),
@@ -1166,7 +1203,8 @@ class HeaderControlState extends State<HeaderControl>
                   },
                 ),
               ],
-            ),
+              );
+            }),
           ),
         );
       },

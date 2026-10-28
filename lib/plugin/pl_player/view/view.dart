@@ -59,6 +59,7 @@ import 'package:PiliPlus/utils/cache_manager.dart';
 import 'package:PiliPlus/utils/connectivity_utils.dart';
 import 'package:PiliPlus/utils/desktop/window_controller.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
+import 'package:PiliPlus/utils/high_quality_playback.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
@@ -958,18 +959,43 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                 videoFormat.length,
                 (index) {
                   final item = videoFormat[index];
-                  final enabled = availableQa.contains(item.quality);
+                  final isAvailable = availableQa.contains(item.quality);
+                  // 本地没有但高画质服务可用 → 也放开点击，点了才向服务端请求
+                  final canUnlock = !isAvailable &&
+                      HighQualityPlayback.configured;
+                  final enabled = isAvailable || canUnlock;
                   return PopupMenuItem<int>(
                     enabled: enabled,
                     height: 35,
                     padding: const EdgeInsets.only(left: 15, right: 10),
                     value: item.quality,
-                    onTap: () {
+                    onTap: () async {
                       if (currentVideoQa.code == item.quality) {
                         return;
                       }
                       final int quality = item.quality!;
                       final newQa = VideoQuality.fromCode(quality);
+
+                      if (!isAvailable) {
+                        if (!HighQualityPlayback.enabled) {
+                          SmartDialog.showToast(
+                            '高画质服务冷却中，${HighQualityPlayback.cooldownSecondsLeft} 秒后可重试',
+                          );
+                          return;
+                        }
+                        SmartDialog.showLoading(msg: '正在解锁 ${newQa.desc}…');
+                        final ok = await videoDetailController
+                            .unlockQuality(quality)
+                            .catchError((_) => false);
+                        SmartDialog.dismiss();
+                        SmartDialog.showToast(
+                          ok
+                              ? '已解锁并切换到 ${newQa.desc}'
+                              : '解锁失败：${HighQualityPlayback.lastStatus ?? '未知原因'}',
+                        );
+                        return;
+                      }
+
                       videoDetailController
                         ..plPlayerController.cacheVideoQa = newQa.code
                         ..currentVideoQa.value = newQa
@@ -982,8 +1008,13 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                     },
                     child: Text(
                       item.newDesc ?? item.quality.toString(),
-                      style: enabled
+                      style: isAvailable
                           ? const TextStyle(color: Colors.white, fontSize: 13)
+                          : canUnlock
+                          ? const TextStyle(
+                              color: Color(0xCCFFFFFF),
+                              fontSize: 13,
+                            )
                           : const TextStyle(
                               color: Color(0x62FFFFFF),
                               fontSize: 13,

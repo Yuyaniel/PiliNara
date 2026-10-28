@@ -650,14 +650,67 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     }
     videoDetailController.playedTime = position;
     videoDetailController.danmakuMaskController.updatePosition(position);
+    _trackWatched(position);
     _checkAutoLikeProgress(position);
   }
 
-  /// 播放进度达到设定百分比时自动点赞（同一视频成功一次即可，失败会重试）
+  /// 播放到「位置 + 累计观看」双条件时自动点赞
+  /// （同一视频成功一次即可，失败会重试）
   String? _autoLikeKey;
   String? _autoLikePendingKey;
   int _autoLikeAttemptAt = 0;
   static const int _autoLikeRetryMs = 15000;
+
+  /// 累计实际观看时长（ms）：只累加正常播放的增量，拖动/回退不计入
+  int _watchedMs = 0;
+
+  /// 上一次 position 回调（ms），用于计算增量
+  int? _lastPositionMs;
+
+  /// 累计值所属的视频（bvid_cid），切集/换视频时重置
+  String? _watchedKey;
+
+  /// 是否已用起播位置播种（续播时把已有进度视为已观看）
+  bool _watchedSeeded = false;
+
+  /// 单次位置增量超过该值视为拖动/跳转。
+  /// 正常播放一次回调约 200~500ms，2 倍速也不超过 1s，3s 足够区分。
+  static const int _seekJumpMs = 3000;
+
+  void _trackWatched(Duration position) {
+    if (!Pref.autoLikeOnProgress) return;
+    final key =
+        '${videoDetailController.bvid}_${videoDetailController.cid.value}';
+    if (_watchedKey != key) {
+      _watchedKey = key;
+      _watchedMs = 0;
+      _lastPositionMs = null;
+      _watchedSeeded = false;
+    }
+    final total =
+        videoDetailController.plPlayerController.durationInMilliseconds;
+    if (total <= 0) return;
+
+    final posMs = position.inMilliseconds;
+    final last = _lastPositionMs;
+    _lastPositionMs = posMs;
+
+    if (!_watchedSeeded) {
+      // 续播种子：起播位置视为已观看，避免「看了大半、接着看完」永远不达标。
+      // 全新视频起播位置为 0，所以「打开就拖到末尾」累计仍为 0。
+      _watchedSeeded = true;
+      _watchedMs = posMs > 0 ? posMs : 0;
+      return;
+    }
+    if (last == null) return;
+
+    final delta = posMs - last;
+    // 回退（delta <= 0）与位置跳变（拖动进度条、跳转、后台恢复）都不计入
+    if (delta <= 0 || delta > _seekJumpMs) return;
+
+    _watchedMs += delta;
+    if (_watchedMs > total) _watchedMs = total;
+  }
 
   void _checkAutoLikeProgress(Duration position) {
     if (!Pref.autoLikeOnProgress) return;
@@ -675,7 +728,13 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     if (_autoLikeKey == key) return;
     final total = videoDetailController.plPlayerController.durationInMilliseconds;
     if (total <= 0) return;
+    // 条件一：位置真的到达该进度附近
     if (position.inMilliseconds * 100 < total * percent) return;
+    // 条件二：累计实际观看时长达到阈值，防止「直接拖到末尾」误赞
+    final watchedPercent = Pref.autoLikeWatchedPercent;
+    if (watchedPercent > 0 && _watchedMs * 100 < total * watchedPercent) {
+      return;
+    }
     // 请求在途时不重复触发；超过退避时间仍未变成已赞，说明上次失败，允许重试。
     // （actionLikeVideo 在接口层声明为 void，拿不到返回值，只能靠 hasLike 判断结果）
     final now = DateTime.now().millisecondsSinceEpoch;

@@ -358,19 +358,6 @@ List<SettingsModel> get playSettings => [
     defaultVal: true,
   ),
   const SwitchModel(
-    title: '播放到指定进度自动点赞',
-    subtitle: '播放进度达到设定百分比时自动点赞，已点赞的视频会跳过',
-    leading: Icon(Icons.thumb_up_alt_outlined),
-    setKey: SettingBoxKey.autoLikeOnProgress,
-    defaultVal: false,
-  ),
-  NormalModel(
-    title: '自动点赞进度',
-    leading: const Icon(Icons.percent_outlined),
-    getSubtitle: () => '播放进度达到 ${Pref.autoLikePercent}% 时点赞',
-    onTap: _showAutoLikePercentDialog,
-  ),
-  const SwitchModel(
     title: '延长播放控件显示时间',
     subtitle: '开启后延长至30秒，便于屏幕阅读器滑动切换控件焦点',
     leading: Icon(Icons.timer_outlined),
@@ -518,28 +505,6 @@ List<SettingsModel> get playSettings => [
   ),
 ];
 
-
-Future<void> _showAutoLikePercentDialog(
-  BuildContext context,
-  VoidCallback setState,
-) async {
-  final res = await showDialog<double>(
-    context: context,
-    builder: (context) => SliderDialog(
-      title: const Text('自动点赞进度'),
-      min: 10,
-      max: 100,
-      divisions: 90,
-      precise: 0,
-      value: Pref.autoLikePercent.toDouble(),
-      suffix: '%',
-    ),
-  );
-  if (res != null) {
-    await GStorage.setting.put(SettingBoxKey.autoLikePercent, res.toInt());
-    setState();
-  }
-}
 
 Future<void> _showSubtitleDialog(
   BuildContext context,

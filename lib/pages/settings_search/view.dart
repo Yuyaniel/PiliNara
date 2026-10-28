@@ -6,6 +6,7 @@ import 'package:PiliPlus/pages/search/controller.dart' show DebounceStreamState;
 import 'package:PiliPlus/pages/setting/models/dm_settings.dart';
 import 'package:PiliPlus/pages/setting/models/dynamics_settings.dart';
 import 'package:PiliPlus/pages/setting/models/extra_settings.dart';
+import 'package:PiliPlus/pages/setting/models/lab_settings.dart';
 import 'package:PiliPlus/pages/setting/models/model.dart';
 import 'package:PiliPlus/pages/setting/models/play_settings.dart';
 import 'package:PiliPlus/pages/setting/models/privacy_settings.dart';
@@ -40,6 +41,7 @@ class _SettingsSearchPageState
     ...replySettings,
     ...playSettings,
     ...styleSettings,
+    ...labSettings,
   ];
 
   @override

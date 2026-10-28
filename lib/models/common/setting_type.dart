@@ -1,6 +1,7 @@
 import 'package:PiliPlus/pages/setting/models/dm_settings.dart';
 import 'package:PiliPlus/pages/setting/models/dynamics_settings.dart';
 import 'package:PiliPlus/pages/setting/models/extra_settings.dart';
+import 'package:PiliPlus/pages/setting/models/lab_settings.dart';
 import 'package:PiliPlus/pages/setting/models/model.dart';
 import 'package:PiliPlus/pages/setting/models/play_settings.dart';
 import 'package:PiliPlus/pages/setting/models/privacy_settings.dart';
@@ -19,6 +20,7 @@ enum SettingType {
   replySetting('评论设置'),
   styleSetting('外观设置'),
   extraSetting('其它设置'),
+  labSetting('实验室'),
   webdavSetting('WebDAV 设置'),
   about('关于'),
   ;
@@ -36,6 +38,7 @@ enum SettingType {
     .replySetting => replySettings,
     .styleSetting => styleSettings,
     .extraSetting => extraSettings,
+    .labSetting => labSettings,
     .webdavSetting || .about => throw UnimplementedError(),
   };
 }

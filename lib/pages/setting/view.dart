@@ -92,6 +92,11 @@ class _SettingPageState extends State<SettingPage> {
       icon: Icon(Icons.extension_outlined),
     ),
     _SettingsModel(
+      type: .labSetting,
+      subtitle: '高画质解锁、自动点赞、动态标签精简等本 fork 新增功能',
+      icon: Icon(Icons.science_outlined),
+    ),
+    _SettingsModel(
       type: .webdavSetting,
       icon: Icon(MdiIcons.databaseCogOutline),
     ),
@@ -140,7 +145,8 @@ class _SettingPageState extends State<SettingPage> {
                       .playSetting ||
                       .dmSetting ||
                       .styleSetting ||
-                      .extraSetting => CommonSetting(
+                      .extraSetting ||
+                      .labSetting => CommonSetting(
                         settingType: _type,
                         showAppBar: false,
                       ),
@@ -174,7 +180,8 @@ class _SettingPageState extends State<SettingPage> {
           .playSetting ||
           .dmSetting ||
           .styleSetting ||
-          .extraSetting => CommonSetting(settingType: type),
+          .extraSetting ||
+          .labSetting => CommonSetting(settingType: type),
           .webdavSetting => const WebDavSettingPage(),
           .about => const AboutPage(),
         },

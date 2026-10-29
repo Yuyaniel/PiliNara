@@ -546,14 +546,6 @@ abstract final class Pref {
   static String get systemProxyPort =>
       _setting.get(SettingBoxKey.systemProxyPort, defaultValue: '');
 
-  /// 起播用官方流，后台预解析高画质并并入画质菜单（不打断当前播放）
-  ///
-  /// 默认关闭：改为「点灰档位才请求」，避免给服务端造成无用请求，也不占用起播带宽。
-  static bool get highQualityPlaybackPreload => _setting.get(
-    SettingBoxKey.highQualityPlaybackPreload,
-    defaultValue: false,
-  );
-
   /// 动态页隐藏「番剧」「专栏」两个标签
   static bool get hideDynamicsTabs =>
       _setting.get(SettingBoxKey.hideDynamicsTabs, defaultValue: false);

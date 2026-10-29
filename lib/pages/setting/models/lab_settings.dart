@@ -30,13 +30,6 @@ List<SettingsModel> get labSettings => [
     setKey: SettingBoxKey.highQualityPlaybackOnStartup,
     defaultVal: false,
   ),
-  const SwitchModel(
-    title: '后台预解析高画质',
-    subtitle: '起播直接用官方流（最快），同时后台解析；完成后更高画质会出现在画质菜单里，点一下即切，不打断当前播放。注意：开启后每次起播都会向解析服务发一次请求',
-    leading: Icon(Icons.cloud_download_outlined),
-    setKey: SettingBoxKey.highQualityPlaybackPreload,
-    defaultVal: false,
-  ),
   NormalModel(
     title: '高画质服务地址',
     leading: const Icon(Icons.dns_outlined),

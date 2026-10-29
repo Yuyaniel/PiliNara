@@ -1052,18 +1052,14 @@ class HeaderControlState extends State<HeaderControl>
     showBottomSheet(
       (context, setState) {
         final theme = Theme.of(context);
+        final availableQa = videoInfo.dash!.video!.availableVideoQualities;
         return Padding(
           padding: const EdgeInsets.all(12),
           child: Material(
             clipBehavior: Clip.hardEdge,
             color: theme.colorScheme.surface,
             borderRadius: const BorderRadius.all(Radius.circular(12)),
-            // 订阅后台预解析状态：解析完成后档位即时变为可点，不必关掉菜单重开
-            child: Obx(() {
-              videoDetailCtr.highQualityTick.value;
-              final availableQa =
-                  videoInfo.dash!.video!.availableVideoQualities;
-              return CustomScrollView(
+            child: CustomScrollView(
               slivers: [
                 SliverToBoxAdapter(
                   child: SizedBox(
@@ -1196,8 +1192,7 @@ class HeaderControlState extends State<HeaderControl>
                   },
                 ),
               ],
-              );
-            }),
+            ),
           ),
         );
       },

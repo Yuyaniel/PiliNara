@@ -1107,48 +1107,9 @@ class VideoDetailController extends GetxController
     }
   }
 
-  /// 已后台预解析过的 cid，避免同一集重复请求
-  int? _preloadedCid;
-
-  /// 后台预解析是否进行中（画质菜单据此显示进度）
-  final RxBool highQualityLoading = false.obs;
-
-  /// 预解析状态版本号：每次成功/失败都自增，画质菜单订阅它来刷新档位
-  final RxInt highQualityTick = 0.obs;
-
-  /// C 方案：起播用官方流，后台把远端高画质流并进 data.dash。
-  /// 用户打开画质菜单即可选到更高档位，切换走 updatePlayer()，
-  /// 不重新请求、不打断当前播放。
-  Future<void> _preloadHighQuality() async {
-    final currentCid = cid.value;
-    if (_preloadedCid == currentCid) return;
-    _preloadedCid = currentCid;
-    final current = data;
-    highQualityLoading.value = true;
-    try {
-      final remote = await HighQualityPlayback.request(
-        bvid: bvid,
-        cid: currentCid,
-        localDurationMs: current.timeLength,
-      );
-      if (remote == null) {
-        // 失败不占位，下次进入可重试（冷却期内 enabled 为 false 会自动跳过）
-        if (_preloadedCid == currentCid) _preloadedCid = null;
-        return;
-      }
-      // 期间已切集 / 换视频，丢弃过期结果
-      if (!identical(current, data) || _dataCid != currentCid) return;
-      current.dash?.video?.merge(remote.dash?.video);
-      current.dash?.audio?.merge(remote.dash?.audio);
-    } finally {
-      highQualityLoading.value = false;
-      highQualityTick.value++;
-    }
-  }
-
   /// 用户点了本地没有的档位：按需向高画质服务解析，成功后并入 dash 并立即切换。
   ///
-  /// 这是「不做后台预解析」时的主路径 —— 只有用户主动切高画质才请求服务端，
+  /// 这是唯一的服务端请求路径 —— 起播用官方流，只有用户主动切高画质才请求，
   /// 不浪费请求，也不占用起播带宽。
   ///
   /// 返回 null 表示已成功切换；否则返回可直接提示给用户的原因。
@@ -1284,16 +1245,6 @@ class VideoDetailController extends GetxController
         unawaited(_supplementVideoQualities().catchError((Object e, StackTrace s) {
           Utils.reportError(e, s);
         }));
-        // C 方案：官方流起播的同时后台预解析高画质。
-        // 已开启「起播即解锁」或本条已手动解锁时，data 本身就是远端流，无需重复请求。
-        if (HighQualityPlayback.enabled &&
-            HighQualityPlayback.preloadOnOpen &&
-            !HighQualityPlayback.autoOnStartup &&
-            !HighQualityPlayback.isUnlocked(cid.value)) {
-          unawaited(_preloadHighQuality().catchError((Object e, StackTrace s) {
-            Utils.reportError(e, s);
-          }));
-        }
       }
 
       languages.value = data.language?.items;

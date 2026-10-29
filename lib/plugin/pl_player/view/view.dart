@@ -56,7 +56,6 @@ import 'package:PiliPlus/plugin/pl_player/widgets/play_pause_btn.dart';
 import 'package:PiliPlus/plugin/pl_player/widgets/speed_lock_arrows.dart';
 import 'package:PiliPlus/utils/android/bindings.g.dart';
 import 'package:PiliPlus/utils/cache_manager.dart';
-import 'package:PiliPlus/utils/connectivity_utils.dart';
 import 'package:PiliPlus/utils/desktop/window_controller.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/high_quality_playback.dart';
@@ -983,15 +982,8 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                           );
                           return;
                         }
-                        SmartDialog.showLoading(msg: '正在解锁 ${newQa.desc}…');
-                        final ok = await videoDetailController
-                            .unlockQuality(quality)
-                            .catchError((_) => false);
-                        SmartDialog.dismiss();
-                        SmartDialog.showToast(
-                          ok
-                              ? '已解锁并切换到 ${newQa.desc}'
-                              : '解锁失败：${HighQualityPlayback.lastStatus ?? '未知原因'}',
+                        await videoDetailController.unlockQualityWithFeedback(
+                          quality,
                         );
                         return;
                       }

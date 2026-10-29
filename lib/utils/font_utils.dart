@@ -101,9 +101,13 @@ abstract final class FontUtils {
     // 装载最多只挡 2 秒：正常远快于此，异常也不至于卡住启动。
     // 超时不会取消装载，它会在后台继续，
     // 引擎完成注册后发出的 fontsChange 会触发文本重新排版。
+    // 注意：_loadActiveFonts() 的静态类型是 Future<void>，但运行时实例是
+    // Future<List<void>>，所以 onTimeout 必须返回 List<void>；写 `() {}`
+    // 会在运行时抛 "() => Null is not a subtype of () => FutureOr<List<void>>"，
+    // 整个字体初始化会在这里中断，自定义字体全部失效。
     await _loadActiveFonts().timeout(
       const Duration(seconds: 2),
-      onTimeout: () {},
+      onTimeout: () => const <void>[],
     );
   }
 

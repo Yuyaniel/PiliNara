@@ -678,7 +678,10 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   static const int _seekJumpMs = 3000;
 
   void _trackWatched(Duration position) {
-    if (!Pref.autoLikeOnProgress) return;
+    // 始终统计，不因开关关闭而跳过：
+    // 否则用户在播放中途才打开「自动点赞」时，首次播种会把当前进度
+    // （例如 80%）整体当成已观看，一过 90% 就误赞。
+    // 累计只是几次整数运算，开关关闭时的开销可忽略。
     final key =
         '${videoDetailController.bvid}_${videoDetailController.cid.value}';
     if (_watchedKey != key) {

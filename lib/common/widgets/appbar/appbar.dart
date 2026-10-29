@@ -9,11 +9,16 @@ class MultiSelectAppBarWidget extends StatelessWidget
   final AppBar child;
   final List<Widget>? actions;
 
+  /// 多选栏自身的背景色；null 时沿用主题默认。
+  /// 嵌入式页面（如底栏「历史」）传 Colors.transparent 以透出宿主渐变背景。
+  final Color? backgroundColor;
+
   const MultiSelectAppBarWidget({
     super.key,
     required this.ctr,
     this.visible,
     this.actions,
+    this.backgroundColor,
     required this.child,
   });
 
@@ -24,6 +29,8 @@ class MultiSelectAppBarWidget extends StatelessWidget
       final colorScheme = ColorScheme.of(context);
       return AppBar(
         bottom: child.bottom,
+        backgroundColor: backgroundColor,
+        surfaceTintColor: backgroundColor,
         leading: IconButton(
           tooltip: '取消',
           onPressed: ctr.handleSelect,

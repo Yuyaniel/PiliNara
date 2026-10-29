@@ -1158,15 +1158,8 @@ class HeaderControlState extends State<HeaderControl>
                             return;
                           }
                           Get.back();
-                          SmartDialog.showLoading(msg: '正在解锁 ${newQa.desc}…');
-                          final ok = await videoDetailCtr
-                              .unlockQuality(quality)
-                              .catchError((_) => false);
-                          SmartDialog.dismiss();
-                          SmartDialog.showToast(
-                            ok
-                                ? '已解锁并切换到 ${newQa.desc}'
-                                : '解锁失败：${HighQualityPlayback.lastStatus ?? '未知原因'}',
+                          await videoDetailCtr.unlockQualityWithFeedback(
+                            quality,
                           );
                           return;
                         }

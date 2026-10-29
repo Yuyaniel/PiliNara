@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert' show jsonDecode;
 import 'dart:io';
-import 'dart:math' show Random, min;
+import 'dart:math' show Random, min, max;
 import 'dart:ui';
 
 import 'package:PiliPlus/common/style.dart';
@@ -688,7 +688,7 @@ class VideoDetailController extends GetxController
         mediaList: mediaList,
         onChangeEpisode: (episode, {bool manual = false}) async {
           try {
-            return ugcIntroCtr.onChangeEpisode(episode, manual: manual);
+            return await ugcIntroCtr.onChangeEpisode(episode, manual: manual);
           } catch (_) {}
           return false;
         },
@@ -887,7 +887,7 @@ class VideoDetailController extends GetxController
 
     if (videoList.isEmpty) {
       final fallback = allVideos.first;
-      currentVideoQa.value = VideoQuality.fromCode(fallback.id!);
+      currentVideoQa.value = VideoQuality.fromCode(fallback.id);
       return fallback;
     }
 
@@ -1149,8 +1149,12 @@ class VideoDetailController extends GetxController
   /// 用户点了本地没有的档位：按需向高画质服务解析，成功后并入 dash 并立即切换。
   ///
   /// 这是「不做后台预解析」时的主路径 —— 只有用户主动切高画质才请求服务端，
-  /// 不浪费请求，也不占用起播带宽。失败原因见 [HighQualityPlayback.lastStatus]。
-  Future<bool> unlockQuality(int quality) async {
+  /// 不浪费请求，也不占用起播带宽。
+  ///
+  /// 返回 null 表示已成功切换；否则返回可直接提示给用户的原因。
+  /// 之所以要确认目标档位确实存在：`findVideoByQa` 在找不到时会静默回退到最高可用档，
+  /// 直接用 bool 返回会出现「提示已切到 4K、实际播的是 1080P」。
+  Future<String?> unlockQuality(int quality) async {
     final current = data;
     final currentCid = cid.value;
     final remote = await HighQualityPlayback.request(
@@ -1158,17 +1162,46 @@ class VideoDetailController extends GetxController
       cid: currentCid,
       localDurationMs: current.timeLength,
     );
-    if (remote == null) return false;
+    if (remote == null) {
+      return HighQualityPlayback.lastStatus ?? '解锁失败（未知原因）';
+    }
     // 期间已切集 / 换视频，丢弃过期结果
-    if (!identical(current, data) || _dataCid != currentCid) return false;
+    if (!identical(current, data) || _dataCid != currentCid) {
+      return '视频已切换，解锁结果已丢弃';
+    }
     current.dash?.video?.merge(remote.dash?.video);
     current.dash?.audio?.merge(remote.dash?.audio);
+
+    final videos = current.dash?.video;
+    final hasTarget = videos?.any((e) => e.id == quality) ?? false;
+    if (!hasTarget) {
+      // 显式取最大档位 id，不依赖 dash.video「首元素为最高档」的服务端排序约定
+      final ids = videos?.map((e) => e.id);
+      final top = (ids == null || ids.isEmpty) ? null : ids.reduce(max);
+      return top == null
+          ? '服务端未返回可用画质'
+          : '该视频最高只有 ${VideoQuality.fromCode(top).desc}';
+    }
+
     final newQa = VideoQuality.fromCode(quality);
     plPlayerController.cacheVideoQa = newQa.code;
     currentVideoQa.value = newQa;
     updatePlayer();
     persistVideoQa(quality);
-    return true;
+    return null;
+  }
+
+  /// 解锁高画质的统一 UI 出口：loading → [unlockQuality] → 结果 toast。
+  /// 画质菜单（header_control / pl_player）共用，避免交互逻辑双份漂移。
+  /// 前置的可用性/冷却检查和菜单关闭（Get.back）由各调用方自行处理。
+  Future<void> unlockQualityWithFeedback(int quality) async {
+    final desc = VideoQuality.fromCode(quality).desc;
+    SmartDialog.showLoading(msg: '正在解锁 $desc…');
+    final error = await unlockQuality(quality).catchError(
+      (Object e) => '解锁异常：$e',
+    );
+    SmartDialog.dismiss();
+    SmartDialog.showToast(error ?? '已解锁并切换到 $desc');
   }
 
   Volume? volume;

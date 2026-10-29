@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:PiliPlus/common/widgets/view_safe_area.dart';
 import 'package:PiliPlus/grpc/dyn.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/http/msg.dart';
@@ -10,9 +9,9 @@ import 'package:PiliPlus/models/common/home_tab_type.dart';
 import 'package:PiliPlus/models/common/msg/msg_unread_type.dart';
 import 'package:PiliPlus/models/common/nav_bar_config.dart';
 import 'package:PiliPlus/pages/dynamics/controller.dart';
+import 'package:PiliPlus/pages/history/controller.dart';
 import 'package:PiliPlus/pages/home/controller.dart';
 import 'package:PiliPlus/pages/mine/controller.dart';
-import 'package:PiliPlus/pages/mine/view.dart';
 import 'package:PiliPlus/services/account_service.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/iterable_ext.dart';
@@ -231,9 +230,12 @@ class MainController extends GetxController
     if (navBarSort == null || navBarSort.isEmpty) {
       navigationBars = NavigationBarType.values;
     } else {
-      navigationBars = navBarSort
+      // 边界过滤：未来枚举值被删除时，旧存储里的越界索引不能炸启动
+      final bars = navBarSort
+          .where((i) => i >= 0 && i < NavigationBarType.values.length)
           .map(NavigationBarType.values.elementAt)
           .toList();
+      navigationBars = bars.isNotEmpty ? bars : NavigationBarType.values;
     }
     this.navigationBars = navigationBars;
     final defPage = Pref.defaultHomePage;
@@ -271,25 +273,26 @@ class MainController extends GetxController
     }
   }
 
-  int? _mineIndex;
+  /// 底栏/侧栏没有「我的」标签时，点头像改为在内容区**内联**展示「我的」页。
+  /// 之前这里用的是 Get.to 全屏 push，会盖住平板常驻侧栏，
+  /// 与「点我的标签」的体验不一致。
+  final RxBool showMineInline = false.obs;
+
   void toMinePage() {
-    _mineIndex ??= navigationBars.indexOf(NavigationBarType.mine);
-    if (_mineIndex != -1) {
-      setIndex(_mineIndex!);
+    // 不缓存索引：user 可能在 Navbar 编辑里增删「我的」，缓存会失效
+    final mineIndex = navigationBars.indexOf(NavigationBarType.mine);
+    if (mineIndex != -1) {
+      showMineInline.value = false;
+      setIndex(mineIndex);
     } else {
-      Get.to(
-        const Material(
-          child: ViewSafeArea(
-            top: true,
-            child: MinePage(showBackBtn: true),
-          ),
-        ),
-      );
+      showMineInline.value = true;
     }
   }
 
   void setIndex(int value) {
     feedBack();
+    // 切到任意标签页时退出「内联我的」临时页
+    showMineInline.value = false;
 
     final currentNav = navigationBars[value];
     if (value != selectedIndex.value) {
@@ -331,6 +334,9 @@ class MainController extends GetxController
             case NavigationBarType.mine:
               Get.putOrFind(MineController.new).onRefresh();
               break;
+            case NavigationBarType.history:
+              _refreshHistory();
+              break;
           }
         },
       );
@@ -344,6 +350,9 @@ class MainController extends GetxController
           break;
         case NavigationBarType.mine:
           Get.putOrFind(MineController.new).toTopOrRefresh();
+          break;
+        case NavigationBarType.history:
+          _refreshHistory();
           break;
       }
     }
@@ -361,6 +370,16 @@ class MainController extends GetxController
       case NavigationBarType.mine:
         Get.putOrFind(MineController.new).toTopAndRefresh();
         break;
+      case NavigationBarType.history:
+        _refreshHistory();
+        break;
+    }
+  }
+
+  /// 历史页控制器是 Get.put 带 tag 的，页面还没构建过时忽略即可
+  void _refreshHistory() {
+    if (Get.isRegistered<HistoryController>(tag: 'all')) {
+      Get.find<HistoryController>(tag: 'all').onRefresh();
     }
   }
 

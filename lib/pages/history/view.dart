@@ -19,9 +19,15 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class HistoryPage extends StatefulWidget {
-  const HistoryPage({super.key, this.type});
+  const HistoryPage({super.key, this.type, this.embedded = false});
 
   final String? type;
+
+  /// 作为底栏标签页嵌入主界面时为 true：
+  /// 1. 背景透明，透出主界面的统一渐变；
+  /// 2. AppBar 不再自行让出状态栏高度（主界面已让出，否则顶部会多出一大块空白）。
+  /// 通过 /history 路由打开时保持 false，维持原有不透明背景与状态栏留白。
+  final bool embedded;
 
   @override
   State<HistoryPage> createState() => _HistoryPageState();
@@ -30,14 +36,21 @@ class HistoryPage extends StatefulWidget {
 class _HistoryPageState extends State<HistoryPage>
     with AutomaticKeepAliveClientMixin, GridMixin {
   late final HistoryController _historyController;
+  late final String _controllerTag = widget.type ?? 'all';
+
+  /// 控制器是否由本页面创建。
+  /// 底栏「历史」与「我的 → 观看记录」会共用同一个 tag，若都用 Get.put，
+  /// 后进者会顶替前者且不触发 onClose（TabController 泄漏），
+  /// 并让「再点一次刷新」刷到已关闭页面的实例。
+  late final bool _ownsController;
 
   @override
   void initState() {
     super.initState();
-    _historyController = Get.put(
-      HistoryController(widget.type),
-      tag: widget.type ?? 'all',
-    );
+    _ownsController = !Get.isRegistered<HistoryController>(tag: _controllerTag);
+    _historyController = _ownsController
+        ? Get.put(HistoryController(widget.type), tag: _controllerTag)
+        : Get.find<HistoryController>(tag: _controllerTag);
   }
 
   HistoryController currCtr([int? index]) {
@@ -54,7 +67,12 @@ class _HistoryPageState extends State<HistoryPage>
 
   @override
   void dispose() {
-    Get.delete<HistoryBaseController>();
+    // 只有创建者负责回收；共用实例时由另一处页面回收，
+    // 否则会把仍在使用的控制器删掉（历史上这里还误删了共享的 HistoryBaseController）
+    if (_ownsController) {
+      Get.delete<HistoryController>(tag: _controllerTag);
+      Get.delete<HistoryBaseController>();
+    }
     super.dispose();
   }
 
@@ -95,9 +113,13 @@ class _HistoryPageState extends State<HistoryPage>
             }
           },
           child: SimpleScaffold(
+            // 嵌入底栏时透明，让主界面的渐变背景透上来，与首页/动态保持一致
+            backgroundColor: widget.embedded ? Colors.transparent : null,
             appBar: MultiSelectAppBarWidget(
               visible: enableMultiSelect,
               ctr: currCtr(),
+              // 嵌入底栏时与普通 AppBar 一致透明化，避免进入多选时背景断层
+              backgroundColor: widget.embedded ? Colors.transparent : null,
               child: _buildAppBar,
             ),
             body: Padding(
@@ -158,7 +180,24 @@ class _HistoryPageState extends State<HistoryPage>
   }
 
   AppBar get _buildAppBar => AppBar(
-    title: const Text('观看记录'),
+    // 嵌入底栏时主界面已让出状态栏高度，AppBar 不再重复让出，否则顶部会空一大块
+    primary: !widget.embedded,
+    centerTitle: false,
+    titleSpacing: 16,
+    // AppBar 默认绘制 surface 底色与 surfaceTint 阴影，会盖住主界面的渐变，
+    // 嵌入底栏时全部透明化，让标题行与下方列表处于同一渐变背景上
+    backgroundColor: widget.embedded ? Colors.transparent : null,
+    surfaceTintColor: widget.embedded ? Colors.transparent : null,
+    elevation: widget.embedded ? 0 : null,
+    scrolledUnderElevation: widget.embedded ? 0 : null,
+    title: const Text(
+      '观看记录',
+      style: TextStyle(
+        fontSize: 17,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0,
+      ),
+    ),
     actions: [
       IconButton(
         tooltip: '搜索',

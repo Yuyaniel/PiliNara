@@ -10,6 +10,7 @@ import 'package:PiliPlus/common/widgets/route_aware_mixin.dart';
 import 'package:PiliPlus/models/common/nav_bar_config.dart';
 import 'package:PiliPlus/pages/home/view.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
+import 'package:PiliPlus/pages/mine/view.dart';
 import 'package:PiliPlus/utils/android/bindings.g.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/desktop/tray_controller.dart';
@@ -142,6 +143,12 @@ class _MainAppState extends PopScopeState<MainApp>
 
   @override
   void onPopInvokedWithResult(bool didPop, Object? result) {
+    // 正在内联展示「我的」时，返回键先退出这个临时页，
+    // 而不是跳回首页或直接退出 App
+    if (_mainController.showMineInline.value) {
+      _mainController.showMineInline.value = false;
+      return;
+    }
     if (_mainController.directExitOnBack) {
       _onBack();
     } else {
@@ -327,6 +334,27 @@ class _MainAppState extends PopScopeState<MainApp>
         children: _mainController.navigationBars.map((i) => i.page).toList(),
       );
     }
+
+    // 侧栏/底栏没有「我的」标签时，点头像改为在内容区内联展示，
+    // 保留侧栏与底栏，效果与点击「我的」标签一致（不再是全屏路由）。
+    //
+    // 注意：这里必须先把原内容存进局部变量再包 Obx。Dart 闭包捕获的是
+    // 变量本身，若在闭包里直接写 `return child`，等 child 被重新赋值为
+    // 这个 Obx 后就会返回自身，造成无限递归（启动即 Stack Overflow 白屏）。
+    // 另外用 IndexedStack 而非直接替换，进出「内联我的」时内容区 State
+    // （滚动位置、列表数据）不会被销毁重建。
+    final content = child;
+    child = Obx(() {
+      final showMine = _mainController.showMineInline.value;
+      return IndexedStack(
+        index: showMine ? 1 : 0,
+        sizing: StackFit.expand,
+        children: [
+          content,
+          if (showMine) const MinePage() else const SizedBox.shrink(),
+        ],
+      );
+    });
 
     Widget? sideBar;
     Widget? bottomNav;

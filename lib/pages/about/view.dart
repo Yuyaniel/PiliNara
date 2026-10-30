@@ -105,12 +105,16 @@ class _AboutPageState extends State<AboutPage> {
               }
             },
             onSecondaryTap: PlatformUtils.isDesktop ? _showDialog : null,
-            child: Image.asset(
-              width: 150,
-              height: 150,
-              excludeFromSemantics: true,
-              cacheWidth: 150.cacheSize(context),
-              Assets.logo,
+            child: ClipRRect(
+              borderRadius: const BorderRadius.all(Radius.circular(28)),
+              child: Image.asset(
+                width: 150,
+                height: 150,
+                fit: .cover,
+                excludeFromSemantics: true,
+                cacheWidth: 150.cacheSize(context),
+                Assets.logoDark,
+              ),
             ),
           ),
           ListTile(
@@ -123,7 +127,7 @@ class _AboutPageState extends State<AboutPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  '基于PiliPlus做了一些自用修改',
+                  '基于 PiliNara / PiliPlus 的自用修改版',
                   style: TextStyle(color: outline),
                   semanticsLabel: '与你一起，发现不一样的世界',
                 ),

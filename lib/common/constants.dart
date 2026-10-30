@@ -1,7 +1,11 @@
 abstract final class Constants {
   static const appName = 'PiliNara';
-  static const sourceCodeUrl = 'https://github.com/Starfallan/PiliNara';
-  static const upstreamCodeUrl = 'https://github.com/bggRGjQaUbCoE/PiliPlus';
+  // 本 fork 的仓库（关于页 / 检查更新 / 问题反馈都指向这里）
+  static const sourceCodeUrl = 'https://github.com/Yuyaniel/Pilione';
+  // 上一级上游：PiliNara（本 fork 的基础）
+  static const upstreamCodeUrl = 'https://github.com/Starfallan/PiliNara';
+  // 再上一级上游：PiliPlus
+  static const upstreamCodeUrl2 = 'https://github.com/bggRGjQaUbCoE/PiliPlus';
     
 
   // 27eb53fc9058f8c3  移动端 Android

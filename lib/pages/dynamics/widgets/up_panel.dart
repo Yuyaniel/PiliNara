@@ -43,7 +43,7 @@ class _UpPanelState extends State<UpPanel> {
     final upData = widget.upData;
     final upList = upData.upList;
     final liveList = upData.liveUsers?.items;
-    return CustomScrollView(
+    final Widget scrollView = CustomScrollView(
       scrollDirection: isTop ? .horizontal : .vertical,
       physics: const AlwaysScrollableScrollPhysics(),
       controller: controller.scrollController,
@@ -59,17 +59,13 @@ class _UpPanelState extends State<UpPanel> {
               alignment: .center,
               height: isTop ? 76 : 60,
               padding: isTop ? const .only(left: 12, right: 6) : null,
-              // 右上角常驻「关注分组」入口：放在列表开头，不随 UP 数量滚没
-              child: Stack(
-                alignment: .center,
-                children: [
-                  Text.rich(
-                    textAlign: .center,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: theme.colorScheme.primary,
-                    ),
-                    TextSpan(
+              child: Text.rich(
+                textAlign: .center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: theme.colorScheme.primary,
+                ),
+                TextSpan(
                   children: [
                     TextSpan(
                       text: 'Live(${upData.liveUsers?.count ?? 0})',
@@ -99,21 +95,6 @@ class _UpPanelState extends State<UpPanel> {
                       ),
                   ],
                 ),
-              ),
-                  Positioned(
-                    right: isTop ? 0 : 4,
-                    child: IconButton(
-                      tooltip: '我的关注（分组）',
-                      visualDensity: VisualDensity.compact,
-                      icon: Icon(
-                        Icons.folder_shared_outlined,
-                        size: 18,
-                        color: theme.colorScheme.primary,
-                      ),
-                      onPressed: () => Get.toNamed('/follow'),
-                    ),
-                  ),
-                ],
               ),
             ),
           ),
@@ -199,7 +180,52 @@ class _UpPanelState extends State<UpPanel> {
         if (!isTop) const SliverToBoxAdapter(child: SizedBox(height: 200)),
       ],
     );
+
+    // top 横向布局：分组入口固定钉在 UP 条可视区右端，不随列表滚动；
+    // 竖排布局维持末尾 sliver 入口。
+    if (isTop) {
+      return Row(
+        children: [
+          Expanded(child: scrollView),
+          _groupEntry(theme),
+        ],
+      );
+    }
+    return scrollView;
   }
+
+  Widget _groupEntry(ThemeData theme) => InkWell(
+    onTap: () => Get.toNamed('/follow'),
+    onLongPress: toFollowPage,
+    child: Container(
+      width: 56,
+      decoration: BoxDecoration(
+        border: Border(
+          left: BorderSide(
+            color: theme.dividerColor.withValues(alpha: 0.3),
+          ),
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: .center,
+        children: [
+          Icon(
+            Icons.folder_shared_outlined,
+            size: 24,
+            color: theme.colorScheme.primary,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '分组',
+            style: TextStyle(
+              fontSize: 11,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 
   void _onSelect(UpItem item) {
     item.hasUpdate = false;

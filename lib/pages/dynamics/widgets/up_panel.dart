@@ -3,7 +3,6 @@ import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/models/common/dynamic/up_panel_position.dart';
 import 'package:PiliPlus/models/dynamics/up.dart';
 import 'package:PiliPlus/pages/dynamics/controller.dart';
-import 'package:PiliPlus/pages/live_follow/view.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
@@ -35,77 +34,52 @@ class _UpPanelState extends State<UpPanel> {
   late final controller = widget.dynamicsController;
   late final isTop = controller.upPanelPosition == UpPanelPosition.top;
 
-  void toFollowPage() => Get.to(const LiveFollowPage());
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final upData = widget.upData;
     final upList = upData.upList;
-    final liveList = upData.liveUsers?.items;
     final Widget scrollView = CustomScrollView(
       scrollDirection: isTop ? .horizontal : .vertical,
       physics: const AlwaysScrollableScrollPhysics(),
       controller: controller.scrollController,
       slivers: [
+        // 「分组」入口（原 Live 头位置）：跳转「我的关注」，
+        // 支持分组新建/排序/编辑与按分组浏览成员
         SliverToBoxAdapter(
           child: InkWell(
-            onTap: () => setState(() {
-              controller.showLiveUp = !controller.showLiveUp;
-            }),
-            onLongPress: toFollowPage,
-            onSecondaryTap: PlatformUtils.isMobile ? null : toFollowPage,
-            child: Container(
-              alignment: .center,
-              height: isTop ? 76 : 60,
-              padding: isTop ? const .only(left: 12, right: 6) : null,
-              child: Text.rich(
-                textAlign: .center,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: theme.colorScheme.primary,
-                ),
-                TextSpan(
-                  children: [
-                    TextSpan(
-                      text: 'Live(${upData.liveUsers?.count ?? 0})',
+            onTap: () => Get.toNamed('/follow'),
+            child: SizedBox(
+              width: isTop ? 64 : double.infinity,
+              height: isTop ? 76 : null,
+              child: Column(
+                mainAxisAlignment: .center,
+                children: [
+                  Padding(
+                    padding: const .all(10),
+                    child: CircleAvatar(
+                      radius: 19,
+                      backgroundColor: theme.colorScheme.secondaryContainer,
+                      child: Icon(
+                        Icons.folder_shared_outlined,
+                        size: 22,
+                        color: theme.colorScheme.onSecondaryContainer,
+                      ),
                     ),
-                    if (!isTop) ...[
-                      const TextSpan(text: '\n'),
-                      WidgetSpan(
-                        alignment: .middle,
-                        child: Icon(
-                          controller.showLiveUp
-                              ? Icons.expand_less
-                              : Icons.expand_more,
-                          size: 12,
-                          color: theme.colorScheme.primary,
-                        ),
+                  ),
+                  if (!isTop)
+                    Text(
+                      '分组',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
-                    ] else
-                      WidgetSpan(
-                        alignment: .middle,
-                        child: Icon(
-                          controller.showLiveUp
-                              ? Icons.keyboard_arrow_right
-                              : Icons.keyboard_arrow_left,
-                          color: theme.colorScheme.primary,
-                          size: 14,
-                        ),
-                      ),
-                  ],
-                ),
+                    ),
+                ],
               ),
             ),
           ),
         ),
-        if (controller.showLiveUp && liveList != null && liveList.isNotEmpty)
-          SliverList.builder(
-            itemCount: liveList.length,
-            itemBuilder: (context, index) {
-              return upItemBuild(theme, liveList[index]);
-            },
-          ),
         SliverToBoxAdapter(
           child: upItemBuild(theme, UpItem(face: '', uname: '全部动态', mid: -1)),
         ),
@@ -138,94 +112,11 @@ class _UpPanelState extends State<UpPanel> {
               return upItemBuild(theme, upList[index]);
             },
           ),
-        // 分组入口：跳转「我的关注」（含分组新建/排序/按分组浏览成员）。
-        // top 横向布局时位于 UP 列表最右侧，竖排布局时位于列表末尾。
-        SliverToBoxAdapter(
-          child: InkWell(
-            onTap: () => Get.toNamed('/follow'),
-            onLongPress: toFollowPage,
-            borderRadius: BorderRadius.circular(isTop ? 0 : 12),
-            child: SizedBox(
-              width: isTop ? 64 : double.infinity,
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: CircleAvatar(
-                      radius: 19,
-                      backgroundColor: theme.colorScheme.secondaryContainer,
-                      child: Icon(
-                        Icons.folder_shared_outlined,
-                        size: 22,
-                        color: theme.colorScheme.onSecondaryContainer,
-                      ),
-                    ),
-                  ),
-                  if (!isTop)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Text(
-                        '分组',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ),
         if (!isTop) const SliverToBoxAdapter(child: SizedBox(height: 200)),
       ],
     );
-
-    // top 横向布局：分组入口固定钉在 UP 条可视区右端，不随列表滚动；
-    // 竖排布局维持末尾 sliver 入口。
-    if (isTop) {
-      return Row(
-        children: [
-          Expanded(child: scrollView),
-          _groupEntry(theme),
-        ],
-      );
-    }
     return scrollView;
   }
-
-  Widget _groupEntry(ThemeData theme) => InkWell(
-    onTap: () => Get.toNamed('/follow'),
-    onLongPress: toFollowPage,
-    child: Container(
-      width: 56,
-      decoration: BoxDecoration(
-        border: Border(
-          left: BorderSide(
-            color: theme.dividerColor.withValues(alpha: 0.3),
-          ),
-        ),
-      ),
-      child: Column(
-        mainAxisAlignment: .center,
-        children: [
-          Icon(
-            Icons.folder_shared_outlined,
-            size: 24,
-            color: theme.colorScheme.primary,
-          ),
-          const SizedBox(height: 6),
-          Text(
-            '分组',
-            style: TextStyle(
-              fontSize: 11,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
 
   void _onSelect(UpItem item) {
     item.hasUpdate = false;

@@ -108,15 +108,12 @@ class _AboutPageState extends State<AboutPage> {
               }
             },
             onSecondaryTap: PlatformUtils.isDesktop ? _showDialog : null,
-            child: ClipOval(
-              child: Image.asset(
-                width: 150,
-                height: 150,
-                fit: .cover,
-                excludeFromSemantics: true,
-                cacheWidth: 150.cacheSize(context),
-                Assets.logoDark,
-              ),
+            child: Image.asset(
+              width: 150,
+              height: 150,
+              excludeFromSemantics: true,
+              cacheWidth: 150.cacheSize(context),
+              Assets.logo,
             ),
           ),
           ListTile(

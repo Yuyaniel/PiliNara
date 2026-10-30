@@ -130,6 +130,13 @@ List<SettingsModel> get labSettings => [
 
   // ===== 动态页 =====
   const SwitchModel(
+    title: '屏蔽「充电专属」视频',
+    subtitle: '动态与转发里不再显示充电专属视频卡片（点开也无法观看的内容）',
+    leading: Icon(Icons.battery_charging_full_outlined),
+    setKey: SettingBoxKey.hideDynamicsChargeVideo,
+    defaultVal: true,
+  ),
+  const SwitchModel(
     title: '隐藏「番剧」「专栏」标签',
     subtitle: '动态页顶栏只保留 全部 / 投稿 / UP；需重进动态页或重启后生效',
     leading: Icon(Icons.visibility_off_outlined),

@@ -30,6 +30,7 @@ abstract final class SettingBoxKey {
       highQualityPlaybackIgnoreShort = 'highQualityPlaybackIgnoreShort',
       highQualityPlaybackOnStartup = 'highQualityPlaybackOnStartup',
       hideDynamicsTabs = 'hideDynamicsTabs',
+      hideDynamicsChargeVideo = 'hideDynamicsChargeVideo',
       enableAutoEnter = 'enableAutoEnter',
       enableAutoExit = 'enableAutoExit',
       autoLikeOnProgress = 'autoLikeOnProgress',

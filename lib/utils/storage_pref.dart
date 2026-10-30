@@ -550,6 +550,10 @@ abstract final class Pref {
   static bool get hideDynamicsTabs =>
       _setting.get(SettingBoxKey.hideDynamicsTabs, defaultValue: false);
 
+  /// 动态页屏蔽「充电专属」视频卡片（点开也看不了，纯噪音）
+  static bool get hideDynamicsChargeVideo =>
+      _setting.get(SettingBoxKey.hideDynamicsChargeVideo, defaultValue: true);
+
   /// 动态页当前应显示的标签（受「隐藏番剧/专栏」影响）
   static List<DynamicsTabType> get visibleDynamicsTabs => hideDynamicsTabs
       ? const [

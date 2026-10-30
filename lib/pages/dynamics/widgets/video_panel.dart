@@ -6,6 +6,7 @@ import 'package:PiliPlus/common/widgets/svg/play_icon.dart';
 import 'package:PiliPlus/models/common/badge_type.dart';
 import 'package:PiliPlus/models/dynamics/result.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
+import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:material_ui/material_ui.dart';
 
 Widget videoSeasonWidget(
@@ -30,6 +31,12 @@ Widget videoSeasonWidget(
   };
 
   if (video == null) {
+    return const SizedBox.shrink();
+  }
+
+  // 屏蔽「充电专属」视频：非充电用户点开也无法观看，纯噪音。
+  // 覆盖正图与转发内嵌卡片（统一走本入口）。
+  if (Pref.hideDynamicsChargeVideo && item.hasOnlyFansVideoBadge) {
     return const SizedBox.shrink();
   }
 

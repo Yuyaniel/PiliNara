@@ -507,11 +507,17 @@ class _SavePanelState extends State<SavePanel> {
                                     ),
                                   Align(
                                     alignment: .centerLeft,
-                                    child: Image.asset(
-                                      Assets.logo2,
-                                      width: 100,
-                                      cacheWidth: 100.cacheSize(context),
-                                      color: colorScheme.onSurfaceVariant,
+                                    child: ClipRRect(
+                                      borderRadius: const BorderRadius.all(
+                                        Radius.circular(14),
+                                      ),
+                                      child: Image.asset(
+                                        Assets.logoDark,
+                                        width: 100,
+                                        height: 100,
+                                        fit: .cover,
+                                        cacheWidth: 100.cacheSize(context),
+                                      ),
                                     ),
                                   ),
                                 ],

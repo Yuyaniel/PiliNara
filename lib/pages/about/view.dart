@@ -38,8 +38,11 @@ class AboutPage extends StatefulWidget {
 }
 
 class _AboutPageState extends State<AboutPage> {
+  /// 显示格式：语义版本(构建日期)，如 2.1.6(202610301323)
+  /// - versionName：上游语义版本（2.1.6），由构建脚本从 pubspec 注入
+  /// - versionCode：构建日期 yyyyMMddHHmm
   final currentVersion =
-      '${BuildConfig.versionName}+${BuildConfig.versionCode}';
+      '${BuildConfig.versionName}(${BuildConfig.versionCode})';
   RxString cacheSize = ''.obs;
 
   late int _pressCount = 0;
@@ -105,8 +108,7 @@ class _AboutPageState extends State<AboutPage> {
               }
             },
             onSecondaryTap: PlatformUtils.isDesktop ? _showDialog : null,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.all(Radius.circular(28)),
+            child: ClipOval(
               child: Image.asset(
                 width: 150,
                 height: 150,

@@ -3,6 +3,8 @@ abstract final class Assets {
 
   static const logo = 'assets/images/logo/logo.png';
   static const logo2 = 'assets/images/logo/logo_2.png';
+  /// 暗色模式图标（实底方形图，原样显示，不做单色染色）
+  static const logoDark = 'assets/images/logo/logo_dark.png';
   static const logoIco = 'assets/images/logo/ico/app_icon.ico';
   static const logoLarge = 'assets/images/logo/desktop/logo_large.png';
 

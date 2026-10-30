@@ -59,13 +59,17 @@ class _UpPanelState extends State<UpPanel> {
               alignment: .center,
               height: isTop ? 76 : 60,
               padding: isTop ? const .only(left: 12, right: 6) : null,
-              child: Text.rich(
-                textAlign: .center,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: theme.colorScheme.primary,
-                ),
-                TextSpan(
+              // 右上角常驻「关注分组」入口：放在列表开头，不随 UP 数量滚没
+              child: Stack(
+                alignment: .center,
+                children: [
+                  Text.rich(
+                    textAlign: .center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: theme.colorScheme.primary,
+                    ),
+                    TextSpan(
                   children: [
                     TextSpan(
                       text: 'Live(${upData.liveUsers?.count ?? 0})',
@@ -95,6 +99,21 @@ class _UpPanelState extends State<UpPanel> {
                       ),
                   ],
                 ),
+              ),
+                  Positioned(
+                    right: isTop ? 0 : 4,
+                    child: IconButton(
+                      tooltip: '我的关注（分组）',
+                      visualDensity: VisualDensity.compact,
+                      icon: Icon(
+                        Icons.folder_shared_outlined,
+                        size: 18,
+                        color: theme.colorScheme.primary,
+                      ),
+                      onPressed: () => Get.toNamed('/follow'),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

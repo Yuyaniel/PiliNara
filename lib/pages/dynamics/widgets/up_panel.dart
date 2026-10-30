@@ -138,6 +138,45 @@ class _UpPanelState extends State<UpPanel> {
               return upItemBuild(theme, upList[index]);
             },
           ),
+        // 分组入口：跳转「我的关注」（含分组新建/排序/按分组浏览成员）。
+        // top 横向布局时位于 UP 列表最右侧，竖排布局时位于列表末尾。
+        SliverToBoxAdapter(
+          child: InkWell(
+            onTap: () => Get.toNamed('/follow'),
+            onLongPress: toFollowPage,
+            borderRadius: BorderRadius.circular(isTop ? 0 : 12),
+            child: SizedBox(
+              width: isTop ? 64 : double.infinity,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: CircleAvatar(
+                      radius: 19,
+                      backgroundColor: theme.colorScheme.secondaryContainer,
+                      child: Icon(
+                        Icons.folder_shared_outlined,
+                        size: 22,
+                        color: theme.colorScheme.onSecondaryContainer,
+                      ),
+                    ),
+                  ),
+                  if (!isTop)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Text(
+                        '分组',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
         if (!isTop) const SliverToBoxAdapter(child: SizedBox(height: 200)),
       ],
     );

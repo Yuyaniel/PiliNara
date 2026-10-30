@@ -34,9 +34,12 @@ Widget videoSeasonWidget(
     return const SizedBox.shrink();
   }
 
-  // 屏蔽「充电专属」视频：非充电用户点开也无法观看，纯噪音。
-  // 覆盖正图与转发内嵌卡片（统一走本入口）。
-  if (Pref.hideDynamicsChargeVideo && item.hasOnlyFansVideoBadge) {
+  // 屏蔽「充电专属」视频：「充电专属」与「抢先看」两种徽标形态都算，
+  // 非充电用户点开也无法观看，纯噪音。覆盖正图与转发内嵌卡片（统一走本入口）。
+  // 仅限 AV 类型：番剧/纪录片的「抢先看」（PGC）不在此列。
+  if (Pref.hideDynamicsChargeVideo &&
+      item.type == 'DYNAMIC_TYPE_AV' &&
+      item.hasChargeOnlyBadge) {
     return const SizedBox.shrink();
   }
 

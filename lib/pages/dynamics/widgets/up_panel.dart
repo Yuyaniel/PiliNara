@@ -45,18 +45,22 @@ class _UpPanelState extends State<UpPanel> {
       controller: controller.scrollController,
       slivers: [
         // 「分组」入口（原 Live 头位置）：跳转「我的关注」，
-        // 支持分组新建/排序/编辑与按分组浏览成员
+        // 支持分组新建/排序/编辑与按分组浏览成员。
+        // 布局与 upItemBuild 完全同构（38px 圆 + spacing4 + 两行文字占位），
+        // 保证图标中心线与 UP 头像中心线处于同一水平线。
         SliverToBoxAdapter(
-          child: InkWell(
-            onTap: () => Get.toNamed('/follow'),
-            child: SizedBox(
-              width: isTop ? 64 : double.infinity,
-              height: isTop ? 76 : null,
+          child: SizedBox(
+            height: 76,
+            width: isTop ? 70 : null,
+            child: InkWell(
+              onTap: () => Get.toNamed('/follow'),
               child: Column(
+                spacing: 4,
+                mainAxisSize: .min,
                 mainAxisAlignment: .center,
                 children: [
                   Padding(
-                    padding: const .all(10),
+                    padding: const .symmetric(horizontal: 4),
                     child: CircleAvatar(
                       radius: 19,
                       backgroundColor: theme.colorScheme.secondaryContainer,
@@ -67,14 +71,19 @@ class _UpPanelState extends State<UpPanel> {
                       ),
                     ),
                   ),
-                  if (!isTop)
-                    Text(
-                      '分组',
+                  Padding(
+                    padding: const .symmetric(horizontal: 4),
+                    child: Text(
+                      isTop ? '分组\n' : '分组',
+                      maxLines: 2,
+                      textAlign: .center,
                       style: TextStyle(
-                        fontSize: 11,
-                        color: theme.colorScheme.onSurfaceVariant,
+                        color: theme.colorScheme.outline,
+                        height: 1.1,
+                        fontSize: 12.5,
                       ),
                     ),
+                  ),
                 ],
               ),
             ),
